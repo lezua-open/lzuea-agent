@@ -3,47 +3,24 @@
    所有颜色 / 间距 / 圆角 / 动效曲线都从这里取，换主题只改这一段。
 
    分层原则：**靠微对比色阶 + 阴影拉开层次，不用黑粗边框。**
-   相邻两层背景只差一点点明度（微对比），边界由 1px 高光 hairline
+   相邻两层背景只差一点点明度（微对比），边界由 1px hairline
    和投影共同描出，视觉上是「浮起来」而不是「框起来」。
+
+   主题分两块，颜色一律从变量取，组件里不许出现色值字面量：
+     :root                亮色 —— 中性米白，默认
+     [data-theme='dark']  深色
+   与颜色无关的（间距 / 圆角 / 字体 / 动效 / 布局）只写一遍。
+
+   语义 token 里有三个的方向会随主题翻转，别按直觉写死：
+     --accent-strong  高一级的强调色。暗底上更亮、亮底上更**深**
+     --on-accent      压在实心强调色上的前景。暗底配深字、亮底配白字
+     --on-danger      同上，压在实心 danger 上的前景
    ================================================================ */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* ---- 微对比色阶：相邻两层明度差刻意压得很小 ---- */
-  --bg: #12161c; /* 画布 */
-  --bg-sunken: #0e1216; /* 侧边栏，往下沉 */
-  --bg-elevated: #171d25; /* 卡片，往上浮 */
-  --bg-raised: #1d242e; /* 悬停 / 选中 */
-  --bg-hover: #222a35;
-  --bg-inset: #0b0f13; /* 代码井，嵌进卡片里 */
-  --bg-glass: rgba(255, 255, 255, 0.028);
-
-  /* ---- 描边是高光，不是黑框 ---- */
-  --hairline: rgba(255, 255, 255, 0.055);
-  --hairline-strong: rgba(255, 255, 255, 0.095);
-  --divider: rgba(255, 255, 255, 0.045);
-
-  --text: #e7eaf0;
-  --text-muted: #98a2b3;
-  --text-faint: #6b7686;
-
-  --accent: #7aa2f7;
-  --accent-weak: rgba(122, 162, 247, 0.14);
-  --accent-strong: #a9c2ff;
-
-  --danger: #f7768e;
-  --danger-weak: rgba(247, 118, 142, 0.14);
-  --warn: #e0af68;
-  --warn-weak: rgba(224, 175, 104, 0.14);
-  --ok: #9ece6a;
-  --ok-weak: rgba(158, 206, 106, 0.14);
-  --info: #7dcfff;
-  --info-weak: rgba(125, 207, 255, 0.14);
-
-  --diff-add: #9ece6a;
-  --diff-del: #f7768e;
-  --diff-hunk: #7aa2f7;
+  /* ================= 与主题无关 ================= */
 
   --radius-sm: 6px;
   --radius: 10px;
@@ -62,12 +39,6 @@
     sans-serif;
   --font-mono: 'Cascadia Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
 
-  /* ---- 阴影承担层次。每级都带一圈 1px 高光，用来取代边框 ---- */
-  --shadow-hair: 0 0 0 1px var(--hairline);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 0 0 1px var(--hairline);
-  --shadow-md: 0 8px 22px -8px rgba(0, 0, 0, 0.42), 0 0 0 1px var(--hairline);
-  --shadow-lg: 0 28px 64px -16px rgba(0, 0, 0, 0.62), 0 0 0 1px var(--hairline-strong);
-
   /* ---- 动效双轨。两套曲线职责不同，不要混用 ----
      snap  ：用户主动的操纵（拖拽、缩放、改尺寸、面板切换）——
              雷厉风行，末端减速但绝不回弹。
@@ -83,17 +54,143 @@
   --dur-md: 220ms;
   --dur-lg: 320ms;
 
-  /* ---- 聚焦：双环阴影，不用突兀的亮色描边 ----
-     inset 内环咬进控件里，外环轻轻托出，外面再压一层深投影。
-     整体温润、有咬合感，而不是一根荧光棒贴在边缘。 */
-  --focus-ring:
-    inset 0 0 0 1px rgba(122, 162, 247, 0.34), 0 0 0 1px rgba(122, 162, 247, 0.16),
-    0 0 0 4px rgba(122, 162, 247, 0.1), 0 12px 32px -12px rgba(0, 0, 0, 0.55);
-
   --sidebar-w: 264px;
   --header-h: 52px;
   --composer-max: 860px;
   --content-max: 860px;
+
+  /* ================= 亮色：中性米白 =================
+     微冷的白，不发黄。相邻层明度差刻意压小，
+     层次靠阴影 + 深色低透明度 hairline 描出。 */
+
+  /* ---- 微对比色阶 ---- */
+  --bg: #f4f4f2; /* 画布 */
+  --bg-sunken: #ebebe8; /* 侧边栏，往下沉 */
+  --bg-elevated: #ffffff; /* 卡片，往上浮 */
+  --bg-raised: #ffffff; /* 悬停 / 选中，靠 hairline + 影子描边 */
+  --bg-hover: #f0f0ed;
+  --bg-inset: #e8e8e5; /* 代码井，嵌进卡片里 */
+  --bg-glass: rgba(31, 35, 40, 0.03);
+
+  /* ---- 描边是阴影，不是边框。亮底下换成深色低透明度 ---- */
+  --hairline: rgba(31, 35, 40, 0.1);
+  --hairline-strong: rgba(31, 35, 40, 0.16);
+  --divider: rgba(31, 35, 40, 0.07);
+
+  --text: #1f2328;
+  --text-muted: #5a6068;
+  --text-faint: #8b9198;
+
+  /* ---- 强调色。亮底下压深，否则文字对比度不够 ---- */
+  --accent: #2f6feb;
+  --accent-2: #7c5cd6; /* 渐变第二色 */
+  --accent-weak: rgba(47, 111, 235, 0.1);
+  --accent-strong: #1f5bd0;
+  --on-accent: #ffffff;
+
+  --danger: #d1425c;
+  --danger-weak: rgba(209, 66, 92, 0.1);
+  --on-danger: #ffffff;
+  --warn: #9a6a12;
+  --warn-weak: rgba(154, 106, 18, 0.12);
+  --ok: #2f7d3a;
+  --ok-weak: rgba(47, 125, 58, 0.12);
+  --info: #1a7fa8;
+  --info-weak: rgba(26, 127, 168, 0.12);
+
+  --diff-add: #2f7d3a;
+  --diff-del: #c2364f;
+  --diff-hunk: #2f6feb;
+
+  /* 弹窗遮罩：亮暗两套都要够暗，才能把注意力压到弹窗上 */
+  --scrim: rgba(31, 35, 40, 0.45);
+
+  /* 拨动开关。滑块在「关」轨道和「开」轨道上都要看得见，
+     所以轨道单独给一个中性灰，不能借用 --bg-raised（亮色下是纯白，滑块会消失）。 */
+  --switch-off: #d5d5d1;
+  --switch-knob: #ffffff;
+
+  /* ---- 阴影。亮底上纯黑影会显脏，压低不透明度并带一点冷灰 ----
+     drop-* 是纯投影那一段，单独拿出来给「只想要投影、不要 hairline」的场合用
+     （例如危险卡片，它的描边已经被 danger 环占了）。 */
+  --shadow-drop-sm: 0 1px 2px rgba(31, 35, 40, 0.08);
+  --shadow-drop-md: 0 8px 22px -8px rgba(31, 35, 40, 0.14);
+  --shadow-drop-lg: 0 28px 64px -16px rgba(31, 35, 40, 0.22);
+  --shadow-hair: 0 0 0 1px var(--hairline);
+  --shadow-sm: var(--shadow-drop-sm), 0 0 0 1px var(--hairline);
+  --shadow-md: var(--shadow-drop-md), 0 0 0 1px var(--hairline);
+  --shadow-lg: var(--shadow-drop-lg), 0 0 0 1px var(--hairline-strong);
+
+  /* ---- 聚焦：双环阴影，不用突兀的亮色描边 ----
+     inset 内环咬进控件里，外环轻轻托出，外面再压一层深投影。
+     整体温润、有咬合感，而不是一根荧光棒贴在边缘。 */
+  --focus-ring:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 12px 32px -12px rgba(31, 35, 40, 0.18);
+}
+
+/* ================= 深色 =================
+   只覆盖颜色，与主题无关的 token 继承 :root。 */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #12161c;
+  --bg-sunken: #0e1216;
+  --bg-elevated: #171d25;
+  --bg-raised: #1d242e;
+  --bg-hover: #222a35;
+  --bg-inset: #0b0f13;
+  --bg-glass: rgba(255, 255, 255, 0.028);
+
+  /* 暗底下描边反过来是高光 */
+  --hairline: rgba(255, 255, 255, 0.055);
+  --hairline-strong: rgba(255, 255, 255, 0.095);
+  --divider: rgba(255, 255, 255, 0.045);
+
+  --text: #e7eaf0;
+  --text-muted: #98a2b3;
+  --text-faint: #6b7686;
+
+  --accent: #7aa2f7;
+  --accent-2: #b48bf2;
+  --accent-weak: rgba(122, 162, 247, 0.14);
+  --accent-strong: #a9c2ff;
+  --on-accent: #0b0d11;
+
+  --danger: #f7768e;
+  --danger-weak: rgba(247, 118, 142, 0.14);
+  --on-danger: #0b0d11;
+  --warn: #e0af68;
+  --warn-weak: rgba(224, 175, 104, 0.14);
+  --ok: #9ece6a;
+  --ok-weak: rgba(158, 206, 106, 0.14);
+  --info: #7dcfff;
+  --info-weak: rgba(125, 207, 255, 0.14);
+
+  --diff-add: #9ece6a;
+  --diff-del: #f7768e;
+  --diff-hunk: #7aa2f7;
+
+  --scrim: rgba(6, 8, 12, 0.66);
+
+  --switch-off: #2b323d;
+  --switch-knob: #ffffff;
+
+  --shadow-drop-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-drop-md: 0 8px 22px -8px rgba(0, 0, 0, 0.42);
+  --shadow-drop-lg: 0 28px 64px -16px rgba(0, 0, 0, 0.62);
+  --shadow-hair: 0 0 0 1px var(--hairline);
+  --shadow-sm: var(--shadow-drop-sm), 0 0 0 1px var(--hairline);
+  --shadow-md: var(--shadow-drop-md), 0 0 0 1px var(--hairline);
+  --shadow-lg: var(--shadow-drop-lg), 0 0 0 1px var(--hairline-strong);
+
+  --focus-ring:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 12px 32px -12px rgba(0, 0, 0, 0.55);
 }
 
 /* ================================================================
@@ -176,7 +273,7 @@ button:disabled {
 
 /* 键盘可达性保留一圈焦点环，但压低亮度 —— 不是输入框那种「亮线」 */
 :focus-visible {
-  outline: 1.5px solid rgba(122, 162, 247, 0.55);
+  outline: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -250,14 +347,14 @@ button:disabled {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), #b48bf2);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   display: grid;
   place-items: center;
   font-weight: 700;
   font-size: 13px;
-  color: #0b0d11;
+  color: var(--on-accent);
   flex-shrink: 0;
-  box-shadow: 0 2px 10px rgba(122, 162, 247, 0.28);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .sidebar__title {
@@ -301,7 +398,7 @@ button:disabled {
 }
 
 .new-chat-btn:hover {
-  background: rgba(122, 162, 247, 0.22);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .conv-item {
@@ -532,13 +629,13 @@ button:disabled {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent), #b48bf2);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   display: grid;
   place-items: center;
   font-size: 22px;
   font-weight: 700;
-  color: #0b0d11;
-  box-shadow: 0 8px 28px -6px rgba(122, 162, 247, 0.36);
+  color: var(--on-accent);
+  box-shadow: 0 8px 28px -6px color-mix(in srgb, var(--accent) 36%, transparent);
 }
 
 .empty-state__title {
@@ -616,9 +713,9 @@ button:disabled {
 }
 
 .msg__avatar--assistant {
-  background: linear-gradient(135deg, var(--accent), #b48bf2);
-  color: #0b0d11;
-  box-shadow: 0 2px 12px rgba(122, 162, 247, 0.3);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--on-accent);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .msg__body {
@@ -750,15 +847,16 @@ button:disabled {
 }
 
 .tool-card--dangerous {
+  /* 描边位被 danger 环占了，投影段单独用 drop-*，不要 hairline */
   box-shadow:
-    0 0 0 1px rgba(247, 118, 142, 0.26),
-    0 8px 22px -8px rgba(0, 0, 0, 0.42);
+    0 0 0 1px color-mix(in srgb, var(--danger) 26%, transparent),
+    var(--shadow-drop-md);
 }
 
 .tool-card--error {
   box-shadow:
-    0 0 0 1px rgba(247, 118, 142, 0.42),
-    0 8px 22px -8px rgba(0, 0, 0, 0.42);
+    0 0 0 1px color-mix(in srgb, var(--danger) 42%, transparent),
+    var(--shadow-drop-md);
 }
 
 .tool-card__header {
@@ -847,7 +945,7 @@ pre.code {
 }
 
 pre.code--error {
-  box-shadow: inset 0 0 0 1px rgba(247, 118, 142, 0.3);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent);
   color: var(--danger);
 }
 
@@ -1102,7 +1200,7 @@ pre.code--error {
 .composer:focus-within {
   box-shadow:
     var(--focus-ring),
-    0 0 0 1px rgba(122, 162, 247, 0.16);
+    0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .composer__textarea {
@@ -1147,7 +1245,7 @@ pre.code--error {
 .composer.is-blocked {
   box-shadow:
     var(--shadow-md),
-    inset 0 0 0 1px rgba(224, 175, 104, 0.16);
+    inset 0 0 0 1px color-mix(in srgb, var(--warn) 16%, transparent);
 }
 
 .btn {
@@ -1174,8 +1272,8 @@ pre.code--error {
 
 .btn--primary {
   background: var(--accent);
-  color: #0b0d11;
-  box-shadow: 0 2px 12px -2px rgba(122, 162, 247, 0.4);
+  color: var(--on-accent);
+  box-shadow: 0 2px 12px -2px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .btn--primary:hover:not(:disabled) {
   background: var(--accent-strong);
@@ -1192,8 +1290,8 @@ pre.code--error {
 
 .btn--danger {
   background: var(--danger);
-  color: #0b0d11;
-  box-shadow: 0 2px 12px -2px rgba(247, 118, 142, 0.4);
+  color: var(--on-danger);
+  box-shadow: 0 2px 12px -2px color-mix(in srgb, var(--danger) 40%, transparent);
 }
 .btn--danger:hover:not(:disabled) {
   filter: brightness(1.08);
@@ -1204,7 +1302,7 @@ pre.code--error {
   color: var(--danger);
 }
 .btn--danger-ghost:hover:not(:disabled) {
-  background: rgba(247, 118, 142, 0.22);
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
 }
 
 .btn--sm {
@@ -1257,7 +1355,7 @@ pre.code--error {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 8, 12, 0.66);
+  background: var(--scrim);
   backdrop-filter: blur(3px);
   display: grid;
   place-items: center;
@@ -1296,8 +1394,8 @@ pre.code--error {
 
 .dialog--dangerous {
   box-shadow:
-    0 28px 64px -16px rgba(0, 0, 0, 0.62),
-    0 0 0 1px rgba(247, 118, 142, 0.34);
+    var(--shadow-drop-lg),
+    0 0 0 1px color-mix(in srgb, var(--danger) 34%, transparent);
 }
 
 .dialog__header {
@@ -1410,17 +1508,17 @@ pre.code--error {
 }
 
 .diff__line--add {
-  background: rgba(158, 206, 106, 0.1);
+  background: color-mix(in srgb, var(--ok) 10%, transparent);
   color: var(--diff-add);
 }
 
 .diff__line--del {
-  background: rgba(247, 118, 142, 0.1);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
   color: var(--diff-del);
 }
 
 .diff__line--hunk {
-  background: rgba(122, 162, 247, 0.09);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
   color: var(--diff-hunk);
 }
 
@@ -1591,7 +1689,7 @@ pre.code--error {
   height: 22px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: var(--bg-raised);
+  background: var(--switch-off);
   box-shadow: inset 0 0 0 1px var(--hairline-strong);
   /* 拨动开关是用户主动操纵，走 snap，不许回弹 */
   transition: background var(--dur-sm) var(--ease-snap);
@@ -1610,7 +1708,9 @@ pre.code--error {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--switch-knob);
+  /* 滑块要浮在轨道上，不然关态（灰轨道）会贴成一片 */
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 25%, transparent);
   transition: transform var(--dur-sm) var(--ease-snap);
 }
 
@@ -1702,13 +1802,13 @@ pre.code--error {
 .banner--warn {
   background: var(--warn-weak);
   color: var(--warn);
-  box-shadow: inset 0 0 0 1px rgba(224, 175, 104, 0.24);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 24%, transparent);
 }
 
 .banner--danger {
   background: var(--danger-weak);
   color: var(--danger);
-  box-shadow: inset 0 0 0 1px rgba(247, 118, 142, 0.24);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 24%, transparent);
 }
 
 .banner__close {
@@ -1722,7 +1822,8 @@ pre.code--error {
 }
 .banner__close:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.08);
+  /* 用 --text 做蒙层，亮暗两套都能自动跟着翻 */
+  background: color-mix(in srgb, var(--text) 10%, transparent);
 }
 
 /*

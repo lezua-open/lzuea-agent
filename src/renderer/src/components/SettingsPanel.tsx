@@ -52,6 +52,8 @@ export function SettingsPanel(): React.JSX.Element {
   }
 
   const pc = draft.provider === 'anthropic' ? draft.anthropic : draft.openai
+  // 上面的早退已经保证非空，但 s.config 是对象属性、跨语句会丢收窄 —— 抓一份局部常量
+  const cfg = s.config
 
   const patchProvider = (patch: Partial<ProviderConfig>): void => {
     setDraft({
@@ -109,6 +111,35 @@ export function SettingsPanel(): React.JSX.Element {
             <span>{error}</span>
           </div>
         )}
+
+        <section className="card">
+          <div className="card__header">
+            <div className="card__title">外观</div>
+          </div>
+          <p className="card__desc">主题切换立刻生效并记住，不走下面的「保存」。</p>
+          <div className="card__body">
+            <div className="field">
+              <div className="field__label">主题</div>
+              <div className="segmented">
+                {(['light', 'dark'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={cfg.theme === t ? 'segmented__item is-active' : 'segmented__item'}
+                    onClick={() => void agentStore.saveConfig({ theme: t })}
+                  >
+                    {t === 'light' ? '亮色' : '暗色'}
+                  </button>
+                ))}
+              </div>
+              <p className="field__hint">
+                {cfg.theme === 'light'
+                  ? '中性米白，适合白天和长时间阅读。'
+                  : '深色，弱光环境下更省眼。'}
+              </p>
+            </div>
+          </div>
+        </section>
 
         <section className="card">
           <div className="card__header">

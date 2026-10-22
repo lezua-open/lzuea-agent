@@ -36,7 +36,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   workspaceRoot: '',
   maxToolIterations: 15,
   maxOutputTokens: 8192,
-  contextWindowTokens: 200_000
+  contextWindowTokens: 200_000,
+  // 默认亮色 —— 中性米白。老配置文件里没有这个字段，schema 的 .default 会补上
+  theme: 'light'
 }
 
 // ---------------------------------------------------------------- 校验
@@ -57,7 +59,9 @@ const appConfigSchema = z.object({
   workspaceRoot: z.string(),
   maxToolIterations: z.number().int().min(1).max(50),
   maxOutputTokens: z.number().int().min(256).max(64_000),
-  contextWindowTokens: z.number().int().min(8_000).max(2_000_000)
+  contextWindowTokens: z.number().int().min(8_000).max(2_000_000),
+  // 老配置文件缺这个字段时补成亮色，不必让用户手动迁移
+  theme: z.enum(['light', 'dark']).default('light')
 })
 
 export function validateConfig(raw: unknown): AppConfig {
@@ -219,7 +223,8 @@ export class JsonConfigStore implements ConfigProvider {
       workspaceRoot: patch.workspaceRoot ?? base.workspaceRoot,
       maxToolIterations: patch.maxToolIterations ?? base.maxToolIterations,
       maxOutputTokens: patch.maxOutputTokens ?? base.maxOutputTokens,
-      contextWindowTokens: patch.contextWindowTokens ?? base.contextWindowTokens
+      contextWindowTokens: patch.contextWindowTokens ?? base.contextWindowTokens,
+      theme: patch.theme ?? base.theme
     }
   }
 }

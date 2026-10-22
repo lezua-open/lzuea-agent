@@ -26,6 +26,14 @@ export default function App(): React.JSX.Element {
     return () => window.clearTimeout(t)
   }, [s.toast])
 
+  // 主题挂到 <html data-theme>，styles.css 的 [data-theme='dark'] 块据此接管色阶。
+  // 亮色是 :root 的默认值，所以配置还没到时也不至于闪黑。
+  const theme = s.config?.theme
+  useEffect(() => {
+    if (!theme) return
+    document.documentElement.dataset.theme = theme
+  }, [theme])
+
   if (!s.ready) {
     return (
       <div className="splash">

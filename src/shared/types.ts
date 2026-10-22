@@ -154,6 +154,9 @@ export type AgentEvent =
 
 export type ProviderKind = 'anthropic' | 'openai'
 
+/** 界面主题。light = 中性米白（默认），dark = 深色 */
+export type ThemeMode = 'light' | 'dark'
+
 export interface ProviderConfig {
   /** 可为空，为空时回退到同名环境变量 */
   apiKey: string
@@ -176,6 +179,8 @@ export interface AppConfig {
   maxOutputTokens: number
   /** 模型上下文窗口估算值，用于上下文裁剪 */
   contextWindowTokens: number
+  /** 界面主题，切换后立刻生效并落盘 */
+  theme: ThemeMode
 }
 
 // ---------------------------------------------------------------- 记忆
