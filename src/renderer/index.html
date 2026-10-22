@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      CSP 只约束渲染进程能加载什么，不承担主要安全职责 ——
+      那是 contextIsolation + sandbox + no nodeIntegration 的事（见 src/main/index.ts）。
+      script-src 里的 'unsafe-inline' 是给 @vitejs/plugin-react 的 dev 热更新引导脚本用的；
+      打包后页面里没有内联脚本，后续可以在打包期把它去掉。
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws: http://localhost:*"
+    />
+    <title>LZUEA Agent</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

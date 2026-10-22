@@ -1,0 +1,29 @@
+# 依赖 / 构建产物 —— 都能由 package.json 和源码重建
+node_modules/
+out/
+dist/
+release/
+.dev/
+coverage/
+*.tsbuildinfo
+.vite/
+
+# 运行期数据：SQLite 会落在 userData，但保不齐有人从仓库目录起进程
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# 密钥：配置本身存 userData，这里只是最后一道闸
+.env
+.env.local
+.env.*.local
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+*.log
+
+# 工具链的临时工作树
+.claude/worktrees/
