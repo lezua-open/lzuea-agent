@@ -13,6 +13,7 @@ import type { ApprovalGate, EventSink, MemoryRepository, MessageStore } from '@c
 import { toAgentError } from '@core/errors'
 import type { JsonConfigStore } from './config'
 import { activeProviderConfig } from './config'
+import { applyWindowChrome } from './window-chrome'
 
 /**
  * IPC 边界。
@@ -120,7 +121,11 @@ export function registerIpc(services: AppServices): void {
   })
 
   ipcMain.handle(CHANNELS.configSet, async (_e, patch: Partial<AppConfig>): Promise<AppConfig> => {
-    return config.set(patch)
+    const next = await config.set(patch)
+    // 主题换了就把窗口外框跟上（底色 + 右上角按钮配色）。
+    // 不跟的话暗色主题下右上角会浮着一块亮色，调整窗口大小时还会露错色底。
+    if (patch.theme) applyWindowChrome(window, next.theme)
+    return next
   })
 
   ipcMain.handle(CHANNELS.configPickWorkspace, async (): Promise<string | null> => {

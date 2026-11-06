@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { advanceWave, IDLE_WAVE, STAGGER, WAVE_CAP, type WaveState } from './wave'
+import { advanceWave, IDLE_WAVE, MAX_LAG, MIN_STAGGER, STAGGER, type WaveState } from './wave'
 
 /**
- * 这套调度是流式观感的地基，专测三条硬性质：
+ * 这套调度是流式观感的地基，专测四条硬性质：
  *
  *  1. 严格递增 —— 任意两个字不同时落定（否则就是「一起砸出来」）
  *  2. 批内连续 —— 成批到货时是一道完整的浪，不是碎波
  *  3. 跨批连续 —— 先慢后快不断层，快的那批接着上一个字的波前排
+ *  4. 落后有上限 —— 显现前沿相对「现在」不许越欠越多，否则字没出来
+ *                   界面已经滚过去了
  */
 
 function expectStrictlyIncreasing(delays: number[]): void {
@@ -59,16 +61,17 @@ describe('advanceWave', () => {
     // 这批必须是依次的浪，绝不能全是 0
     expectStrictlyIncreasing(out.delays)
     expect(out.delays[0]).toBe(0) // 紧接上一个字，第一个不额外等
-    expect(out.delays[1]).toBe(STAGGER)
-    expect(out.delays[19]).toBe(19 * STAGGER)
+    // 但整波不许拖出预算 —— 慢到快的切换不该让字落到屏幕外
+    expect(out.delays[19]).toBeLessThanOrEqual(MAX_LAG + 1)
+    expect(out.delays[19]).toBeGreaterThan(STAGGER) // 确实排开了，不是压成一点
   })
 
   it('大批量压缩错峰但仍严格递增 —— 这是「一起砸出来」的回归守卫', () => {
     const out = advanceWave(IDLE_WAVE, 200, 1000)
     expectStrictlyIncreasing(out.delays)
-    // 错峰被压到 WAVE_CAP / 200，整波不超过 WAVE_CAP
-    expect(out.delays[199]).toBeLessThanOrEqual(WAVE_CAP + 1)
-    expect(out.delays[199]).toBeCloseTo(199 * (WAVE_CAP / 200), 5)
+    expect(out.delays[199]).toBeLessThanOrEqual(MAX_LAG + 1)
+    // 40 个字（下面那条）和 200 个字都不能出现重复时刻
+    expect(new Set(out.delays).size).toBe(out.delays.length)
   })
 
   it('旧实现的钳制会把尾巴压平 —— 这里不允许', () => {
@@ -83,9 +86,9 @@ describe('advanceWave', () => {
     // 100ms 后又到 3 个字，此时第一批最后一个字还在对焦（60ms 起，120ms 长）
     const second = advanceWave(first.state, 3, 1100)
 
-    expect(first.delays).toEqual([0, 30, 60])
+    expect(first.delays).toEqual([0, STAGGER, 2 * STAGGER])
     // 第一批波前推到 1000+60+30 = 1090，早于 1100 → 第二批第一个字立刻起
-    expect(second.delays).toEqual([0, 30, 60])
+    expect(second.delays).toEqual([0, STAGGER, 2 * STAGGER])
   })
 
   it('同一批内起点不早于 now，延迟永不为负', () => {
@@ -94,5 +97,37 @@ describe('advanceWave', () => {
     const second = advanceWave(first.state, 4, 1010)
     for (const d of second.delays) expect(d).toBeGreaterThanOrEqual(0)
     expectStrictlyIncreasing(second.delays)
+  })
+
+  /**
+   * 这条是「字没有出来界面已经往下滚了」的直接回归守卫。
+   *
+   * 旧实现在这里会一路欠下去：错峰只在批内压缩（WAVE_CAP / count），
+   * 但波前跨批累积。100 字/秒的流速下，2 秒后显现前沿落后 1 秒多，
+   * 越流越远 —— 字全都进了布局，人眼却还在看几秒前那段。
+   */
+  it('持续快流时显现不许越欠越多：每批末字都在 MAX_LAG 内起跑', () => {
+    let state = IDLE_WAVE
+    // 100 字/秒：每 30ms 到 3 个字，连跑 3 秒
+    for (let i = 0; i < 100; i++) {
+      const now = i * 30
+      const out = advanceWave(state, 3, now)
+      state = out.state
+
+      expectStrictlyIncreasing(out.delays)
+      // delays[末] 就是「末字起跑时刻 − 现在」，也就是这批的落后量
+      expect(out.delays[2], `第 ${i} 批的落后量必须被钉在 MAX_LAG 内`).toBeLessThanOrEqual(
+        MAX_LAG + 1
+      )
+    }
+    // 跑完 3 秒波前也没飘走 —— 停下来后 240ms 内就追平了
+    expect(state.front - 99 * 30).toBeLessThanOrEqual(MAX_LAG + 1)
+  })
+
+  it('错峰下限只在字多到离谱时顶上来，且仍严格递增', () => {
+    const out = advanceWave(IDLE_WAVE, 4000, 1000)
+    expectStrictlyIncreasing(out.delays)
+    // 4000 * MIN_STAGGER = 2000ms，远超 MAX_LAG —— 宁可超时也不能同时落定
+    expect(out.delays[1] - out.delays[0]).toBeCloseTo(MIN_STAGGER, 5)
   })
 })

@@ -12,7 +12,13 @@ import { ToolCallCard } from './ToolCallCard'
  * 所以不能走 ContentBlock 渲染，而是走 LiveSegment。
  * run 结束后 store 会整体重读数据库，这个组件随之被 Message 取代。
  */
-export function LiveTurnView({ turn }: { turn: LiveTurn }): React.JSX.Element {
+export function LiveTurnView({
+  turn,
+  visible = true
+}: {
+  turn: LiveTurn
+  visible?: boolean
+}): React.JSX.Element {
   return (
     <div className="msg msg--assistant">
       <div className="msg__avatar msg__avatar--assistant">A</div>
@@ -26,8 +32,8 @@ export function LiveTurnView({ turn }: { turn: LiveTurn }): React.JSX.Element {
                 <ThinkingBlock
                   key={i}
                   text={seg.text}
-                  defaultOpen
                   streaming={turn.status === 'streaming'}
+                  visible={visible}
                 />
               )
 

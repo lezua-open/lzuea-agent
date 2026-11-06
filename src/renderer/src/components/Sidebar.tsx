@@ -33,11 +33,6 @@ export function Sidebar(): React.JSX.Element {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar__brand">
-        <div className="sidebar__logo">A</div>
-        <div className="sidebar__title">LZUEA Agent</div>
-      </div>
-
       <div className="sidebar__body">
         <button
           type="button"

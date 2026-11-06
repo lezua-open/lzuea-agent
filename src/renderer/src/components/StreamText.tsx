@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { WINDOW } from './streamSplit'
+import { codePoints, WINDOW } from './streamSplit'
 import { advanceWave, IDLE_WAVE, type WaveState } from './wave'
 
 /**
@@ -19,7 +19,17 @@ import { advanceWave, IDLE_WAVE, type WaveState } from './wave'
  *    否则浏览器会把进行中的动画进度重排，闪一下。
  * 4. **动画区只保留尾部 WINDOW 个字**。否则一篇几千字的回复会有几千个 span，
  *    合成层直接爆掉。前面的字退化成一整段纯文本节点，排版行为完全一致。
+ *
+ * 另外每个 span 上挂 `data-reveal-at`（这个字真正起对焦的绝对时刻）。滚动要跟着
+ * 「看得见的底」走而不是 scrollHeight —— 还没起跑的字是 opacity:0 的 span，占着
+ * 位置但看不见，按排版底滚就是「字没出来界面先掉了」。这个属性就是给滚动判定用的。
  */
+
+/** 一个字的排期。delay 锁死给 CSS，revealAt 给滚动算「看得见的底」 */
+interface CharPlan {
+  delay: number
+  revealAt: number
+}
 
 export interface StreamTextProps {
   /** 本段文字 */
@@ -35,13 +45,15 @@ export function StreamText({
   startIndex = 0,
   animate = true
 }: StreamTextProps): React.JSX.Element {
-  /** 每个字的 animation-delay，算一次就锁死 */
-  const delays = useRef(new Map<number, number>())
+  /** 每个字的排期，算一次就锁死 */
+  const plan = useRef(new Map<number, CharPlan>())
   /** 波前状态，跨 delta 持续 */
   const wave = useRef<WaveState>(IDLE_WAVE)
 
   const end = startIndex + text.length
   const windowStart = Math.max(startIndex, end - WINDOW)
+  const localFrom = windowStart - startIndex
+  const tail = codePoints(text, localFrom)
 
   if (animate) {
     // 排期在 render 里做，因为首帧就得带上 animation-delay —— 挪进 effect 会先画一帧
@@ -50,37 +62,41 @@ export function StreamText({
     // 幂等性靠 Map 的存在性判断保证：同一个字只排一次，StrictMode 的双调 render
     // 也只会推进一次波前。这是这段代码唯一允许的 render 副作用。
     const fresh: number[] = []
-    for (let abs = windowStart; abs < end; abs++) {
-      if (!delays.current.has(abs)) fresh.push(abs)
+    for (const [local] of tail) {
+      const abs = startIndex + local
+      if (!plan.current.has(abs)) fresh.push(abs)
     }
 
     if (fresh.length > 0) {
-      const schedule = advanceWave(wave.current, fresh.length, performance.now())
-      fresh.forEach((abs, i) => delays.current.set(abs, schedule.delays[i]))
+      const now = performance.now()
+      const schedule = advanceWave(wave.current, fresh.length, now)
+      fresh.forEach((abs, i) => {
+        const delay = schedule.delays[i]
+        plan.current.set(abs, { delay, revealAt: now + delay })
+      })
       wave.current = schedule.state
     }
 
     // 滑出窗口的字已经变成纯文本，清掉避免长回复下 Map 无限增长
-    for (const abs of delays.current.keys()) {
-      if (abs < windowStart) delays.current.delete(abs)
+    for (const abs of plan.current.keys()) {
+      if (abs < windowStart) plan.current.delete(abs)
     }
   }
 
   if (!animate) return <>{text}</>
 
-  const head = text.slice(0, windowStart - startIndex)
-  const tail = text.slice(windowStart - startIndex)
-
   return (
     <>
-      {head}
-      {Array.from(tail).map((ch, k) => {
-        const abs = windowStart + k
+      {text.slice(0, localFrom)}
+      {tail.map(([local, ch]) => {
+        const abs = startIndex + local
+        const p = plan.current.get(abs)
         return (
           <span
             key={abs}
             className="char-in"
-            style={{ animationDelay: `${delays.current.get(abs) ?? 0}ms` }}
+            data-reveal-at={p?.revealAt ?? 0}
+            style={{ animationDelay: `${p?.delay ?? 0}ms` }}
           >
             {ch}
           </span>

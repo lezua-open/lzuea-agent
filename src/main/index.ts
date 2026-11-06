@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, shell } from 'electron'
-import type { ThemeMode } from '@shared/types'
 import { AgentRuntime } from '@core/agent/runtime'
 import { defaultProviderFactory } from '@core/providers/factory'
 import { SystemError } from '@core/errors'
@@ -18,6 +17,7 @@ import { configHealthCheck, createEventSink, registerIpc, type AppServices } fro
 import { openDatabase } from './store/db'
 import { SqliteMemoryRepository } from './store/memory-repository'
 import { SqliteMessageStore } from './store/message-store'
+import { applyWindowChrome, windowChrome } from './window-chrome'
 
 /**
  * 应用装配层。
@@ -27,17 +27,6 @@ import { SqliteMessageStore } from './store/message-store'
  */
 
 // ---------------------------------------------------------------- 窗口
-
-/**
- * 窗口底色必须跟主题一致，否则调整窗口大小时边框会露出错误的一层底色。
- *
- * 这两个值只能和 styles.css 里的 `--bg` 重复一遍 —— 主进程读不到 CSS 变量。
- * 改主题色时两处都要改。
- */
-const WINDOW_BG: Record<ThemeMode, string> = {
-  light: '#f4f4f2',
-  dark: '#12161c'
-}
 
 function createWindow(logger: Logger): BrowserWindow {
   const win = new BrowserWindow({
@@ -49,7 +38,9 @@ function createWindow(logger: Logger): BrowserWindow {
     autoHideMenuBar: true,
     title: 'LZUEA Agent',
     // 配置这时候还没读进来，先用默认亮色；buildServices 之后按实际主题纠正
-    backgroundColor: WINDOW_BG.light,
+    backgroundColor: '#f4f4f2',
+    // 外框交给渲染进程画，右上角只留系统窗口按钮（细节见 window-chrome.ts）
+    ...windowChrome(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       // 渲染进程拿不到 Node，跨进程只能走 preload 暴露的 AgentAPI
@@ -176,9 +167,9 @@ app
 
     registerIpc(services)
 
-    // 窗口底色跟主题走。配置读进来之后纠正一次，
-    // 主题在设置里切换时由渲染进程这边的 setBackgroundColor 再跟上。
-    void services.config.get().then((cfg) => window.setBackgroundColor(WINDOW_BG[cfg.theme]))
+    // 窗口外框跟主题走：底色 + 右上角按钮配色。配置读进来之后纠正一次，
+    // 主题在设置里切换时由 configSet 那边的 applyWindowChrome 再跟上。
+    void services.config.get().then((cfg) => applyWindowChrome(window, cfg.theme))
 
     // 配置缺东西就明确告诉用户，别等请求 401 才发现
     void configHealthCheck(services.config).then((warning) => {

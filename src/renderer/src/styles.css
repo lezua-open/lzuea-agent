@@ -55,6 +55,7 @@
   --dur-lg: 320ms;
 
   --sidebar-w: 264px;
+  --titlebar-h: 40px;
   --header-h: 52px;
   --composer-max: 860px;
   --content-max: 860px;
@@ -65,7 +66,7 @@
 
   /* ---- 微对比色阶 ---- */
   --bg: #f4f4f2; /* 画布 */
-  --bg-sunken: #ebebe8; /* 侧边栏，往下沉 */
+  --bg-sunken: #ebebe8; /* 应用外框（标题栏 + 侧栏），比画布沉一层 */
   --bg-elevated: #ffffff; /* 卡片，往上浮 */
   --bg-raised: #ffffff; /* 悬停 / 选中，靠 hairline + 影子描边 */
   --bg-hover: #f0f0ed;
@@ -284,8 +285,96 @@ button:disabled {
 
 .app {
   display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
+}
+
+.app__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* ---- 窗口标题栏 ----
+   窗口是无原生标题栏的（titleBarStyle: hidden），上沿整条归这里画。
+
+   整条是一块**独立的 chrome**，不跟下面的面板走：不按侧栏宽度劈开。
+   底色和侧栏取同一档（--bg-sunken，画布往下沉一层）—— 上沿和左栏本来
+   就是同一圈外框，同色才连得起来，中间不冒竖缝。但**宽度**跟侧栏解耦，
+   这样它才放得下跨面板的东西（标签栏、面包屑、全局搜索、运行状态……），
+   而不是被「左边 264px 是侧栏」这条缝钉死。
+
+   排成三段，往哪段塞东西看内容归属：
+     __lead   开头，品牌
+     __main   中段，弹性占满 —— 以后放标签栏 / 面包屑 / 搜索
+     __trail  收尾，动作区
+
+   系统窗口按钮压在整条的最右边，所以让位的 padding-right 挂在整条上，
+   三段都不用各自去躲按钮。它的底色由主进程按同一档色阶配
+   （main/window-chrome.ts 的 CHROME.chrome），两处不同步就会浮一块突兀的底。
+
+   按钮本身不画 —— 归系统，Win11 的贴靠布局/原生缩放/无障碍都在它身上。
+   这里只做两件事：整条当拖拽区（-webkit-app-region: drag，双击最大化、
+   右键系统菜单由它自动接上），以及按 --caption-w 让开按钮。 */
+.titlebar {
+  height: var(--titlebar-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  background: var(--bg-sunken);
+  box-shadow: inset 0 -1px 0 var(--divider);
+  padding-right: var(--caption-w, 138px);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.titlebar__lead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-left: var(--space-4);
+  /* 品牌整体往下压 10px（原来是加在旧的 .titlebar__brand 上的，照搬过来） */
+  padding-top: 10px;
+  min-width: 0;
+}
+
+.titlebar__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.titlebar__trail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+.titlebar__logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--on-accent);
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.titlebar__name {
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .main {
@@ -297,7 +386,9 @@ button:disabled {
 }
 
 .splash {
-  height: 100%;
+  /* 嵌在 .app 的列布局里（上面还压着标题栏），占满剩下的高度 */
+  flex: 1;
+  min-height: 0;
   display: grid;
   place-items: center;
   color: var(--text-muted);
@@ -331,38 +422,6 @@ button:disabled {
   background: var(--bg-sunken);
   /* 分隔用极淡的高光线，不是黑边 */
   box-shadow: inset -1px 0 0 var(--divider);
-}
-
-.sidebar__brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  height: var(--header-h);
-  box-sizing: content-box;
-  box-shadow: inset 0 -1px 0 var(--divider);
-}
-
-.sidebar__logo {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--on-accent);
-  flex-shrink: 0;
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 28%, transparent);
-}
-
-.sidebar__title {
-  font-weight: 650;
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .sidebar__body {
@@ -802,6 +861,17 @@ button:disabled {
 
 .thinking__label {
   font-weight: 600;
+}
+
+/* 收着还在跑的时候给一颗呼吸灯。默认收起后一整段思考可能一分多钟没动静，
+   不留点反馈会像卡死了。想看的人点开就是。 */
+.thinking__live {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--accent-strong);
+  animation: pulse 1.1s ease-in-out infinite;
 }
 
 /* 收起/展开：自适应网格 0fr → 1fr，不去硬算高度。

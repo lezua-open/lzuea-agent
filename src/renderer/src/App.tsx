@@ -2,9 +2,11 @@ import { useEffect } from 'react'
 import { agentStore, useAgentStore } from './store/agentStore'
 import { ApprovalDialog } from './components/ApprovalDialog'
 import { ChatView } from './components/ChatView'
+import { KeepAlive } from './components/KeepAlive'
 import { MemoryPanel } from './components/MemoryPanel'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Sidebar } from './components/Sidebar'
+import { TitleBar } from './components/TitleBar'
 import { Icon } from './components/icons'
 
 /**
@@ -35,37 +37,47 @@ export default function App(): React.JSX.Element {
   }, [theme])
 
   if (!s.ready) {
+    // 加载屏也得有标题栏 —— 否则启动那几秒窗口既拖不动，右上角按钮还浮在加载屏上
     return (
-      <div className="splash">
-        <div className="splash__spinner" />
-        <div>正在启动…</div>
+      <div className="app">
+        <TitleBar />
+        <div className="splash">
+          <div className="splash__spinner" />
+          <div>正在启动…</div>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="app">
-      <Sidebar />
+      <TitleBar />
 
-      <main className="main">
-        {s.fatalError && (
-          <div className="banner banner--danger" style={{ margin: '12px 16px 0' }}>
-            <span>{s.fatalError}</span>
-            <button
-              type="button"
-              className="banner__close"
-              onClick={() => agentStore.dismissFatalError()}
-              aria-label="关闭"
-            >
-              <Icon name="close" size={13} />
-            </button>
-          </div>
-        )}
+      <div className="app__body">
+        <Sidebar />
 
-        {s.view === 'chat' && <ChatView />}
-        {s.view === 'settings' && <SettingsPanel />}
-        {s.view === 'memory' && <MemoryPanel />}
-      </main>
+        <main className="main">
+          {s.fatalError && (
+            <div className="banner banner--danger" style={{ margin: '12px 16px 0' }}>
+              <span>{s.fatalError}</span>
+              <button
+                type="button"
+                className="banner__close"
+                onClick={() => agentStore.dismissFatalError()}
+                aria-label="关闭"
+              >
+                <Icon name="close" size={13} />
+              </button>
+            </div>
+          )}
+
+          <KeepAlive active={s.view === 'chat'}>
+            <ChatView visible={s.view === 'chat'} />
+          </KeepAlive>
+          {s.view === 'settings' && <SettingsPanel />}
+          {s.view === 'memory' && <MemoryPanel />}
+        </main>
+      </div>
 
       {s.approval && <ApprovalDialog approval={s.approval} />}
 
