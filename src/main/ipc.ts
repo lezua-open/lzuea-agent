@@ -1,4 +1,4 @@
-import { dialog, ipcMain, type BrowserWindow } from 'electron'
+import { dialog, ipcMain, nativeTheme, type BrowserWindow } from 'electron'
 import type {
   AgentEvent,
   AppConfig,
@@ -6,14 +6,15 @@ import type {
   ChatMessage,
   ConversationSummary,
   MemoryEntry,
-  ProviderConfig
+  ProviderConfig,
+  ThemeMode
 } from '@shared/types'
 import type { AgentRuntime } from '@core/agent/runtime'
 import type { ApprovalGate, EventSink, MemoryRepository, MessageStore } from '@core/ports'
 import { toAgentError } from '@core/errors'
 import type { JsonConfigStore } from './config'
 import { activeProviderConfig } from './config'
-import { applyWindowChrome } from './window-chrome'
+import { applyWindowChrome, resolveTheme } from './window-chrome'
 
 /**
  * IPC 边界。
@@ -39,6 +40,7 @@ export const CHANNELS = {
   conversationsList: 'conversations:list',
   conversationsCreate: 'conversations:create',
   conversationsDelete: 'conversations:delete',
+  conversationsUndoDelete: 'conversations:undoDelete',
   conversationsRename: 'conversations:rename',
   messagesGet: 'messages:get',
   agentSend: 'agent:send',
@@ -49,6 +51,7 @@ export const CHANNELS = {
   configPickWorkspace: 'config:pickWorkspace',
   memoryList: 'memory:list',
   memoryDelete: 'memory:delete',
+  memoryUndoDelete: 'memory:undoDelete',
   event: 'agent:event'
 } as const
 
@@ -71,6 +74,10 @@ export function registerIpc(services: AppServices): void {
   ipcMain.handle(CHANNELS.conversationsDelete, async (_e, id: string): Promise<void> => {
     runtime.stop(id)
     await store.deleteConversation(id)
+  })
+
+  ipcMain.handle(CHANNELS.conversationsUndoDelete, async (_e, id: string): Promise<boolean> => {
+    return store.undoDeleteConversation(id)
   })
 
   ipcMain.handle(
@@ -124,7 +131,7 @@ export function registerIpc(services: AppServices): void {
     const next = await config.set(patch)
     // 主题换了就把窗口外框跟上（底色 + 右上角按钮配色）。
     // 不跟的话暗色主题下右上角会浮着一块亮色，调整窗口大小时还会露错色底。
-    if (patch.theme) applyWindowChrome(window, next.theme)
+    if (patch.theme) syncTheme(window, next.theme)
     return next
   })
 
@@ -151,6 +158,27 @@ export function registerIpc(services: AppServices): void {
   ipcMain.handle(CHANNELS.memoryDelete, async (_e, id: string): Promise<void> => {
     await memory.deleteById(id)
   })
+
+  ipcMain.handle(CHANNELS.memoryUndoDelete, async (_e, id: string): Promise<boolean> => {
+    return memory.undoDeleteById(id)
+  })
+
+  // 系统深浅切换时外框要跟上（只有 mode='system' 才真有变化，其余时候重对一遍表无害）。
+  // 渲染进程的 <html data-theme> 由 App 里的 matchMedia 自己盯，两头各管各的。
+  nativeTheme.on('updated', () => {
+    void config.get().then((cfg) => {
+      if (!window.isDestroyed()) syncTheme(window, cfg.theme)
+    })
+  })
+}
+
+/**
+ * 主题落到窗口外框上（底色 + 右上角按钮配色）。
+ * 'system' 时交给 nativeTheme 跟系统走，解析成两档再对表 —— 解析规则在 resolveTheme。
+ */
+export function syncTheme(window: BrowserWindow, mode: ThemeMode): void {
+  nativeTheme.themeSource = mode
+  applyWindowChrome(window, resolveTheme(mode, nativeTheme.shouldUseDarkColors))
 }
 
 /** 主动校验一下当前配置是否可用，供启动时提示用户 */

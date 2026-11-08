@@ -7,7 +7,7 @@ import { Icon } from './icons'
  *
  * 反馈类动效走「Q 弹」曲线（`--ease-spring`，带回弹），和拖拽/缩放那类
  * 雷厉风行、不许回弹的曲线是两套，不要混用。图标从 copy 弹成 check，
- * 2.5 秒后提示消失（见 App 里的 toast 计时）。
+ * 提示一会儿自动消失（计时在 ToastBar 里，悬停暂停；失败走错误档，留得久）。
  *
  * 剪贴板先走 `navigator.clipboard`，失败再退回隐藏 textarea + execCommand。
  * 退回这条路不是过度设计：Electron 在非安全上下文下 navigator.clipboard 会是
@@ -32,7 +32,7 @@ export function CopyButton({
 
   async function copy(): Promise<void> {
     const ok = await writeClipboard(text)
-    agentStore.showToast(ok ? label : '复制失败，剪贴板不可用')
+    agentStore.showToast(ok ? label : '复制失败，剪贴板不可用', ok ? undefined : { kind: 'error' })
     if (!ok) return
 
     setCopied(true)
@@ -48,7 +48,7 @@ export function CopyButton({
       title={copied ? '已复制' : '复制'}
       aria-label={copied ? '已复制' : '复制'}
     >
-      <Icon name={copied ? 'check' : 'copy'} size={14} className="copy-btn__icon" />
+      <Icon name={copied ? 'check' : 'copy'} size={13} className="copy-btn__icon" />
     </button>
   )
 }

@@ -1,0 +1,208 @@
+/* ================================================================
+   侧边栏
+   ================================================================ */
+
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-sunken);
+}
+
+/* 右缘拖拽缝：左右拖动调侧栏宽度（--sidebar-w）。
+   命中区 12px 横跨侧栏边缘，视觉上一条竖向细线，hover / 拖动时点亮。 */
+.sidebar__resizer {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  bottom: 0;
+  width: 12px;
+  cursor: col-resize;
+  z-index: 4;
+  -webkit-app-region: no-drag;
+}
+
+.sidebar__resizer::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: calc(50% - 1px);
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity var(--dur-xs, 120ms) var(--ease-snap);
+}
+
+.sidebar__resizer:hover::after,
+.sidebar__resizer.is-dragging::after {
+  opacity: 1;
+}
+
+/* 拖动期间锁住全局：不选中文本、指针统一成 ↔ */
+body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.sidebar__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sidebar__section-label {
+  /* 中文小标签：不套英文大写样式的 uppercase + tracking，字距 0 */
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: var(--space-2) var(--space-2) var(--space-1);
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--accent-weak);
+  color: var(--accent-strong);
+  font-weight: 600;
+  box-shadow: var(--shadow-hair);
+  transition: background var(--dur-xs) var(--ease-snap);
+}
+
+.new-chat-btn:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.conv-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-align: left;
+  transition:
+    background var(--dur-xs) var(--ease-snap),
+    color var(--dur-xs) var(--ease-snap);
+}
+
+.conv-item:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.conv-item.is-active {
+  background: var(--bg-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-hair);
+}
+
+.conv-item__title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.conv-item__actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--dur-xs) var(--ease-snap);
+}
+
+.conv-item:hover .conv-item__actions,
+.conv-item.is-active .conv-item__actions {
+  opacity: 1;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  font-size: 13px;
+  line-height: 1;
+  transition:
+    background var(--dur-xs) var(--ease-snap),
+    color var(--dur-xs) var(--ease-snap);
+}
+
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.icon-btn--danger:hover {
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--bg-inset);
+  outline: none;
+  font-size: 13px;
+  box-shadow: var(--focus-ring);
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 13px;
+  transition:
+    background var(--dur-xs) var(--ease-snap),
+    color var(--dur-xs) var(--ease-snap);
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.nav-item.is-active {
+  background: var(--bg-raised);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--shadow-hair);
+}
+
+.nav-item__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 0.85;
+}
+

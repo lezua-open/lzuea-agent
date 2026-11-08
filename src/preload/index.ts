@@ -21,6 +21,8 @@ const api: AgentAPI = {
   createConversation: (title?: string): Promise<ConversationSummary> =>
     ipcRenderer.invoke('conversations:create', title),
   deleteConversation: (id: string): Promise<void> => ipcRenderer.invoke('conversations:delete', id),
+  undoDeleteConversation: (id: string): Promise<boolean> =>
+    ipcRenderer.invoke('conversations:undoDelete', id),
   renameConversation: (id: string, title: string): Promise<void> =>
     ipcRenderer.invoke('conversations:rename', id, title),
   getMessages: (conversationId: string): Promise<ChatMessage[]> =>
@@ -39,6 +41,7 @@ const api: AgentAPI = {
 
   listMemory: (): Promise<MemoryEntry[]> => ipcRenderer.invoke('memory:list'),
   deleteMemory: (id: string): Promise<void> => ipcRenderer.invoke('memory:delete', id),
+  undoDeleteMemory: (id: string): Promise<boolean> => ipcRenderer.invoke('memory:undoDelete', id),
 
   onAgentEvent: (listener: (event: AgentEvent) => void): (() => void) => {
     const wrapper = (_e: Electron.IpcRendererEvent, event: AgentEvent): void => listener(event)

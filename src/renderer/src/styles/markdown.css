@@ -1,0 +1,194 @@
+/* ================================================================
+   Markdown
+   ================================================================ */
+
+.md {
+  font-size: 14px;
+  line-height: 1.75;
+  word-break: break-word;
+  text-wrap: pretty;
+}
+
+.md > :first-child {
+  margin-top: 0;
+}
+.md > :last-child {
+  margin-bottom: 0;
+}
+
+.md p {
+  margin: 0 0 var(--space-3);
+  text-wrap: pretty;
+}
+
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  margin: var(--space-5) 0 var(--space-3);
+  line-height: 1.35;
+  font-weight: 650;
+  text-wrap: pretty;
+}
+.md h1 {
+  font-size: 20px;
+}
+.md h2 {
+  font-size: 17px;
+}
+.md h3 {
+  font-size: 15px;
+}
+.md h4 {
+  font-size: 14px;
+}
+
+.md ul,
+.md ol {
+  margin: 0 0 var(--space-3);
+  padding-left: 22px;
+}
+.md li {
+  margin-bottom: var(--space-1);
+  text-wrap: pretty;
+}
+
+.md a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.md a:hover {
+  text-decoration: underline;
+}
+
+.md code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  background: var(--bg-raised);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.md pre {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--bg-inset);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  overflow-x: auto;
+}
+
+.md pre code {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.md blockquote {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-left: 3px solid var(--hairline-strong);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.md table {
+  width: 100%;
+  margin: 0 0 var(--space-3);
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.md th,
+.md td {
+  padding: var(--space-2) var(--space-3);
+  box-shadow: inset 0 0 0 1px var(--divider);
+  text-align: left;
+}
+
+.md th {
+  background: var(--bg-elevated);
+  font-weight: 650;
+}
+
+.md hr {
+  border: none;
+  height: 1px;
+  background: var(--divider);
+  margin: var(--space-5) 0;
+}
+
+/* ---- 代码高亮。颜色全走语义 token，亮暗两套自动跟主题翻 ----
+   哲学同上：低饱和。注释退到 faint，关键字 / 字符串 / 数字三系即够读，
+   不铺 highlight.js 那种彩虹。 */
+.hljs-comment,
+.hljs-quote {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag,
+.hljs-formula {
+  color: var(--accent-strong);
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-selector-attr,
+.hljs-attr > .hljs-string {
+  color: var(--ok);
+}
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--warn);
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-section,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: var(--accent);
+}
+
+.hljs-type,
+.hljs-built_in,
+.hljs-class .hljs-title,
+.hljs-params {
+  color: var(--info);
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-property {
+  color: var(--text);
+}
+
+.hljs-meta,
+.hljs-tag {
+  color: var(--text-muted);
+}
+
+.hljs-deletion {
+  color: var(--danger);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 650;
+}
+

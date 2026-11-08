@@ -1,0 +1,257 @@
+/* ================================================================
+   设置 / 记忆
+   ================================================================ */
+
+.panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.panel {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.panel__header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.panel__header p {
+  margin: var(--space-1) 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.card {
+  border: none;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card__header {
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.card__title {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.card__desc {
+  padding: 0 var(--space-4) var(--space-3);
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 0;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.card__body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field__hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 0;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--bg-inset);
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  transition: box-shadow var(--dur-sm) var(--ease-snap);
+  font-size: 13px;
+}
+
+/* 同一套双环聚焦，和输入框保持一致的「咬合感」 */
+.input:focus {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.input--mono {
+  font-family: var(--font-mono);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.row .input {
+  flex: 1;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--radius);
+  background: var(--bg-inset);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.segmented__item {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition:
+    background var(--dur-xs) var(--ease-snap),
+    color var(--dur-xs) var(--ease-snap);
+}
+
+.segmented__item.is-active {
+  background: var(--bg-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-hair);
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--switch-off);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  /* 拨动开关是用户主动操纵，走 snap，不许回弹 */
+  transition: background var(--dur-sm) var(--ease-snap);
+}
+
+.switch.is-on {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--switch-knob);
+  /* 滑块要浮在轨道上，不然关态（灰轨道）会贴成一片 */
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 25%, transparent);
+  transition: transform var(--dur-sm) var(--ease-snap);
+}
+
+.switch.is-on::after {
+  transform: translateX(16px);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.panel__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ---- 记忆列表 ---- */
+
+.memory-item {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+.memory-item__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.memory-item__key {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--accent-strong);
+  margin-bottom: var(--space-1);
+  word-break: break-all;
+}
+
+.memory-item__content {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-wrap: pretty;
+  margin: 0 0 var(--space-2);
+}
+
+.memory-item__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--bg-raised);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+

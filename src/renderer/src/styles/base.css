@@ -1,0 +1,100 @@
+/* ================================================================
+   基础
+   ================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+
+  /* 等宽数字锁死：时间戳、行号、计数器变宽时不许把旁边的字挤得抖动 */
+  font-variant-numeric: tabular-nums;
+  /* 排版收尾：避免段落末行剩一个孤字 */
+  text-wrap: pretty;
+}
+
+/* 行内小图标相对文字中心下沉 1/8em，让图标与汉字/拉丁字母视觉等高。
+   SVG 的几何中心默认对齐的是 baseline，不加这一下图标会整体偏高。 */
+svg {
+  vertical-align: -0.125em;
+  flex-shrink: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+  font-variant-numeric: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: default;
+  /* 禁用 = 去饱和收灰。不用 opacity 整块变淡 —— 那会把文字对比度一起拉下 AA 线 */
+  filter: saturate(0.1) opacity(0.75);
+}
+
+/* 实心主按钮禁用时整颗变灰底灰字（系统按钮禁用的惯例），不靠半透明暗示 */
+.btn--primary:disabled,
+.btn--danger:disabled {
+  background: var(--bg-inset);
+  color: var(--text-faint);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  filter: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+/* 平时不出条，指针进到可滚区才浮出细条 —— 8px 里含 2px 边距，视觉 4px，接近 macOS 浮层条 */
+:hover::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  background-clip: padding-box;
+}
+:hover::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+  background-clip: padding-box;
+}
+
+/* 键盘可达性保留一圈焦点环，但压低亮度 —— 不是输入框那种「亮线」 */
+:focus-visible {
+  outline: 1.5px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+

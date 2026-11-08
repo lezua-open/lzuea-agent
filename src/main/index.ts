@@ -13,11 +13,11 @@ import { telemetryMiddleware } from '@core/tools/middleware/telemetry'
 import { timeoutMiddleware } from '@core/tools/middleware/timeout'
 import { IpcApprovalGate } from './approval-gate'
 import { JsonConfigStore, SafeStorageCodec } from './config'
-import { configHealthCheck, createEventSink, registerIpc, type AppServices } from './ipc'
+import { configHealthCheck, createEventSink, registerIpc, syncTheme, type AppServices } from './ipc'
 import { openDatabase } from './store/db'
 import { SqliteMemoryRepository } from './store/memory-repository'
 import { SqliteMessageStore } from './store/message-store'
-import { applyWindowChrome, windowChrome } from './window-chrome'
+import { windowChrome, WINDOW_PALETTE } from './window-chrome'
 
 /**
  * 应用装配层。
@@ -38,7 +38,7 @@ function createWindow(logger: Logger): BrowserWindow {
     autoHideMenuBar: true,
     title: 'LZUEA Agent',
     // 配置这时候还没读进来，先用默认亮色；buildServices 之后按实际主题纠正
-    backgroundColor: '#f4f4f2',
+    backgroundColor: WINDOW_PALETTE.light.canvas,
     // 外框交给渲染进程画，右上角只留系统窗口按钮（细节见 window-chrome.ts）
     ...windowChrome(),
     webPreferences: {
@@ -168,8 +168,8 @@ app
     registerIpc(services)
 
     // 窗口外框跟主题走：底色 + 右上角按钮配色。配置读进来之后纠正一次，
-    // 主题在设置里切换时由 configSet 那边的 applyWindowChrome 再跟上。
-    void services.config.get().then((cfg) => applyWindowChrome(window, cfg.theme))
+    // 主题在设置里切换时由 configSet 那边的 syncTheme 再跟上。
+    void services.config.get().then((cfg) => syncTheme(window, cfg.theme))
 
     // 配置缺东西就明确告诉用户，别等请求 401 才发现
     void configHealthCheck(services.config).then((warning) => {

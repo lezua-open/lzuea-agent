@@ -37,8 +37,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   maxToolIterations: 15,
   maxOutputTokens: 8192,
   contextWindowTokens: 200_000,
-  // 默认亮色 —— 中性米白。老配置文件里没有这个字段，schema 的 .default 会补上
-  theme: 'light'
+  // 默认跟随系统 —— 白天亮、夜里暗，不用用户自己挑。老配置文件没有这个字段，schema 的 .default 会补上
+  theme: 'system'
 }
 
 // ---------------------------------------------------------------- 校验
@@ -60,8 +60,8 @@ const appConfigSchema = z.object({
   maxToolIterations: z.number().int().min(1).max(50),
   maxOutputTokens: z.number().int().min(256).max(64_000),
   contextWindowTokens: z.number().int().min(8_000).max(2_000_000),
-  // 老配置文件缺这个字段时补成亮色，不必让用户手动迁移
-  theme: z.enum(['light', 'dark']).default('light')
+  // 老配置文件缺这个字段时补成跟随系统，不必让用户手动迁移
+  theme: z.enum(['light', 'dark', 'system']).default('system')
 })
 
 export function validateConfig(raw: unknown): AppConfig {

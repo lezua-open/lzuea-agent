@@ -6,28 +6,32 @@ import { TITLEBAR_H, WINDOW_PALETTE } from './window-chrome'
 /**
  * 窗口外框配色的**镜像一致性**。
  *
- * 标题栏的颜色要在两个进程各存一份：渲染进程从 styles.css 的设计令牌取，
+ * 标题栏的颜色要在两个进程各存一份：渲染进程从 styles/tokens.css 的设计令牌取，
  * 主进程（window-chrome.ts）读不到 CSS 变量，只能抄一份色值去配右上角的
  * 原生窗口按钮。抄的那份一旦和 CSS 对不上，症状是「按钮浮着一块突兀的底」——
  * 肉眼才看得出来，代码里看不出任何错。
  *
- * 所以这里反过来拿 styles.css 核那张表：对不上就红，不用等人盯着屏幕发现。
+ * 所以这里反过来拿 tokens.css 核那张表：对不上就红，不用等人盯着屏幕发现。
  */
 
-const stylesPath = fileURLToPath(new URL('../renderer/src/styles.css', import.meta.url))
+const stylesDir = new URL('../renderer/src/styles/', import.meta.url)
+const tokensCss = readFileSync(fileURLToPath(new URL('tokens.css', stylesDir)), 'utf8')
+/** 样式按域拆分后 `.titlebar` 在 shell.css、`.sidebar` 在 sidebar.css —— 各取各的文件 */
+const shellCss = readFileSync(fileURLToPath(new URL('shell.css', stylesDir)), 'utf8')
+const sidebarCss = readFileSync(fileURLToPath(new URL('sidebar.css', stylesDir)), 'utf8')
 
 /**
  * 取一条规则的声明块。
  *
  * 选择器要**整词 + 后面紧跟 `{`** 才算命中 —— 不能用裸 indexOf：
- * styles.css 文件头的注释里就写着 `:root` 和 `[data-theme='dark']`，
+ * tokens.css 文件头的注释里就写着 `:root` 和 `[data-theme='dark']`，
  * 光找子串会先撞上注释，然后把后面那条规则（`:root`）当成暗色块，
  * 于是「暗色镜像一致」会假绿。
  */
 function ruleOf(css: string, selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const m = new RegExp(`(?:^|[}\\s,])${escaped}\\s*{`).exec(css)
-  if (!m) throw new Error(`styles.css 里找不到 ${selector} 规则`)
+  if (!m) throw new Error(`styles/ 里找不到 ${selector} 规则`)
   return braceBlock(css, css.indexOf('{', m.index), selector)
 }
 
@@ -61,10 +65,9 @@ function hexToRgb(hex: string): string {
   return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`
 }
 
-describe('window-chrome：主进程的色表是 styles.css 的镜像', () => {
-  const css = readFileSync(stylesPath, 'utf8')
-  const light = ruleOf(css, ':root')
-  const dark = ruleOf(css, "[data-theme='dark']")
+describe('window-chrome：主进程的色表是 tokens.css 的镜像', () => {
+  const light = ruleOf(tokensCss, ':root')
+  const dark = ruleOf(tokensCss, "[data-theme='dark']")
 
   it('亮色三档都能在 :root 里找到同值', () => {
     expect(hexToRgb(WINDOW_PALETTE.light.canvas)).toBe(hexToRgb(decl(light, '--bg')))
@@ -86,8 +89,8 @@ describe('window-chrome：主进程的色表是 styles.css 的镜像', () => {
   it('标题栏和侧栏取同一个令牌（右上角按钮也必须是这个色）', () => {
     // 用户要的就是这两块同色。它们同源 --bg-sunken，主进程按钮底色取 chrome ——
     // 三处同源，才不会出现「标题栏和侧栏一个色、按钮却是另一色」。
-    expect(decl(ruleOf(css, '.titlebar'), 'background')).toBe('var(--bg-sunken)')
-    expect(decl(ruleOf(css, '.sidebar'), 'background')).toBe('var(--bg-sunken)')
+    expect(decl(ruleOf(shellCss, '.titlebar'), 'background')).toBe('var(--bg-sunken)')
+    expect(decl(ruleOf(sidebarCss, '.sidebar'), 'background')).toBe('var(--bg-sunken)')
     expect(hexToRgb(WINDOW_PALETTE.light.chrome)).toBe(hexToRgb(decl(light, '--bg-sunken')))
     expect(hexToRgb(WINDOW_PALETTE.dark.chrome)).toBe(hexToRgb(decl(dark, '--bg-sunken')))
   })

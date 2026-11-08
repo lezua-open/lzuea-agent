@@ -20,7 +20,14 @@ const KIND_LABEL: Record<ApprovalPreview['kind'], string> = {
  *  - 高危操作不提供「总是允许」，没有捷径可按。
  *  - 默认焦点放在弹窗上而不是某个按钮上，避免回车直接触发。
  */
-export function ApprovalDialog({ approval }: { approval: ApprovalState }): React.JSX.Element {
+export function ApprovalDialog({
+  approval,
+  leaving = false
+}: {
+  approval: ApprovalState
+  /** 离场中（退场动画期间保持挂载），交互已被 CSS 拦掉 */
+  leaving?: boolean
+}): React.JSX.Element {
   const dialogRef = useRef<HTMLDivElement>(null)
   const [showInput, setShowInput] = useState(false)
 
@@ -46,7 +53,7 @@ export function ApprovalDialog({ approval }: { approval: ApprovalState }): React
 
   return (
     <div
-      className="overlay"
+      className={leaving ? 'overlay overlay--leaving' : 'overlay'}
       onMouseDown={(e) => {
         // 只在遮罩本身按下才算取消，避免在正文里选中文本时误关
         if (e.target === e.currentTarget) decide('deny')
@@ -58,7 +65,9 @@ export function ApprovalDialog({ approval }: { approval: ApprovalState }): React
         role="dialog"
         aria-modal="true"
         aria-labelledby="approval-title"
-        className={isDangerous ? 'dialog dialog--dangerous' : 'dialog'}
+        className={`${isDangerous ? 'dialog dialog--dangerous' : 'dialog'}${
+          leaving ? ' dialog--leaving' : ''
+        }`}
       >
         <div className="dialog__header">
           <div
@@ -68,7 +77,7 @@ export function ApprovalDialog({ approval }: { approval: ApprovalState }): React
                 : 'dialog__icon dialog__icon--write'
             }
           >
-            <Icon name={isDangerous ? 'warning' : 'file'} size={17} />
+            <Icon name={isDangerous ? 'warning' : 'file'} size={16} />
           </div>
           <div className="dialog__titles">
             <h2 id="approval-title" className="dialog__title">

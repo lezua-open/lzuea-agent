@@ -108,7 +108,7 @@ export function Composer({ blocker, running, onSend, onStop }: ComposerProps): R
               disabled={blocked || text.trim().length === 0}
               title={blocked ? blocker.reason : '发送'}
             >
-              <Icon name="send" size={14} />
+              <Icon name="send" size={13} />
               发送
             </button>
           )}

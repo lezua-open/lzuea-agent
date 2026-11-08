@@ -154,3 +154,37 @@ describe('adoptTitleFromFirstMessage', () => {
     expect(c.title).toBe('我的标题')
   })
 })
+
+describe('deleteConversation / undoDeleteConversation', () => {
+  it('删除后撤销：会话和消息（含顺序）原样回来', async () => {
+    const id = await newConversation('要删的')
+    await store.appendMessage(id, msg('m1', 'user', 'a', 1000))
+    await store.appendMessage(id, msg('m2', 'assistant', 'b', 1000))
+
+    await store.deleteConversation(id)
+    expect(await store.exists(id)).toBe(false)
+
+    await expect(store.undoDeleteConversation(id)).resolves.toBe(true)
+    expect(await store.exists(id)).toBe(true)
+
+    const [c] = await store.listConversations()
+    expect(c.title).toBe('要删的')
+    const rows = await store.getMessages(id)
+    expect(rows.map((r) => r.id)).toEqual(['m1', 'm2'])
+    expect(rows[1].blocks).toEqual([{ type: 'text', text: 'b' }])
+  })
+
+  it('回收站没有这份就返回 false，撤销两次第二次不生效', async () => {
+    // 从来没删过的 id：不能凭空造一个空会话出来
+    await expect(store.undoDeleteConversation('never-deleted')).resolves.toBe(false)
+    expect(await store.exists('never-deleted')).toBe(false)
+
+    // 删 → 撤销 → 再撤销：第二下已经没东西可撤
+    const id = await newConversation()
+    await store.appendMessage(id, msg('m1', 'user', 'x'))
+    await store.deleteConversation(id)
+    await expect(store.undoDeleteConversation(id)).resolves.toBe(true)
+    await expect(store.undoDeleteConversation(id)).resolves.toBe(false)
+    expect(await store.exists(id)).toBe(true) // 第二次撤销不能把刚恢复的又弄没
+  })
+})

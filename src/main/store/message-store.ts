@@ -3,9 +3,12 @@ import type { ChatMessage, ConversationSummary, ContentBlock } from '@shared/typ
 import type { MessageStore } from '@core/ports'
 import { SystemError, ValidationError } from '@core/errors'
 import type { AppDatabase } from './db'
-import { conversations, messages } from './schema'
+import { conversations, messages, type ConversationRow, type MessageRow } from './schema'
 
 const DEFAULT_TITLE = '新对话'
+
+/** 删除回收站的容量。撤销是「刚删完就反悔」，留太多就成了半吊子备份 */
+const TRASH_LIMIT = 5
 
 function parseBlocks(json: string, messageId: string): ContentBlock[] {
   try {
@@ -43,6 +46,15 @@ export class SqliteMessageStore implements MessageStore {
    */
   constructor(private readonly db: AppDatabase) {}
 
+  /**
+   * 删除回收站：进程内的最近 TRASH_LIMIT 份快照，供 undoDeleteConversation 反悔。
+   * 刻意不落盘 —— 撤销是即时反悔的交互，不是备份机制，重启即清是故意的。
+   */
+  private readonly trash = new Map<
+    string,
+    { conversation: ConversationRow; messages: MessageRow[] }
+  >()
+
   async listConversations(): Promise<ConversationSummary[]> {
     const rows = await this.db
       .select({
@@ -79,7 +91,45 @@ export class SqliteMessageStore implements MessageStore {
   }
 
   async deleteConversation(id: string): Promise<void> {
+    // 先快照再删，顺序反了回收站里就只剩一份空气
+    const [conversation] = await this.db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, id))
+      .limit(1)
+    if (conversation) {
+      const messageRows = await this.db
+        .select()
+        .from(messages)
+        .where(eq(messages.conversationId, id))
+        .orderBy(asc(messages.seq))
+      // 先删再放：Map.set 对已有 key 保留原插入位，这样插入序才等于删除先后，淘汰轮得到最旧那份
+      this.trash.delete(id)
+      this.trash.set(id, { conversation, messages: messageRows })
+      while (this.trash.size > TRASH_LIMIT) {
+        const oldest = this.trash.keys().next().value
+        if (oldest === undefined) break
+        this.trash.delete(oldest)
+      }
+    }
+
     await this.db.delete(conversations).where(eq(conversations.id, id))
+  }
+
+  async undoDeleteConversation(id: string): Promise<boolean> {
+    const entry = this.trash.get(id)
+    if (!entry) return false
+    this.trash.delete(id)
+
+    // 快照原样放回，seq 也照旧 —— 消息顺序是硬约束（见类头）。
+    // 事务体同步，同 appendMessage。
+    this.db.transaction((tx) => {
+      tx.insert(conversations).values(entry.conversation).run()
+      if (entry.messages.length > 0) {
+        tx.insert(messages).values(entry.messages).run()
+      }
+    })
+    return true
   }
 
   async renameConversation(id: string, title: string): Promise<void> {

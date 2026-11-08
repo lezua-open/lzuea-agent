@@ -154,8 +154,8 @@ export type AgentEvent =
 
 export type ProviderKind = 'anthropic' | 'openai'
 
-/** 界面主题。light = 中性米白（默认），dark = 深色 */
-export type ThemeMode = 'light' | 'dark'
+/** 界面主题。light = 中性米白，dark = 深色，system = 跟随系统深浅（默认） */
+export type ThemeMode = 'light' | 'dark' | 'system'
 
 export interface ProviderConfig {
   /** 可为空，为空时回退到同名环境变量 */
@@ -213,6 +213,8 @@ export interface AgentAPI {
   listConversations(): Promise<ConversationSummary[]>
   createConversation(title?: string): Promise<ConversationSummary>
   deleteConversation(id: string): Promise<void>
+  /** 撤销删除。只对还留在主进程回收站里的那次有效，成功返回 true */
+  undoDeleteConversation(id: string): Promise<boolean>
   renameConversation(id: string, title: string): Promise<void>
   getMessages(conversationId: string): Promise<ChatMessage[]>
 
@@ -229,6 +231,8 @@ export interface AgentAPI {
   // 记忆
   listMemory(): Promise<MemoryEntry[]>
   deleteMemory(id: string): Promise<void>
+  /** 撤销删除。只对还留在主进程回收站里的那次有效，成功返回 true */
+  undoDeleteMemory(id: string): Promise<boolean>
 
   // 事件订阅，返回取消订阅函数
   onAgentEvent(listener: (event: AgentEvent) => void): () => void

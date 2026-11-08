@@ -21,6 +21,8 @@ export interface MessageStore {
   listConversations(): Promise<ConversationSummary[]>
   createConversation(title?: string): Promise<ConversationSummary>
   deleteConversation(id: string): Promise<void>
+  /** 撤销删除：把删除时留的快照原样放回。回收站没有这份就返回 false */
+  undoDeleteConversation(id: string): Promise<boolean>
   renameConversation(id: string, title: string): Promise<void>
   exists(id: string): Promise<boolean>
   getMessages(conversationId: string): Promise<ChatMessage[]>
@@ -37,6 +39,8 @@ export interface MemoryRepository {
   remember(key: string, content: string, tags?: string[]): Promise<MemoryEntry>
   forget(key: string): Promise<boolean>
   deleteById(id: string): Promise<boolean>
+  /** 撤销删除：把删除时留的快照原样放回。回收站没有这份就返回 false */
+  undoDeleteById(id: string): Promise<boolean>
   recall(query: string, limit?: number): Promise<MemoryEntry[]>
 }
 

@@ -1,0 +1,38 @@
+/*
+ * ⚠️ 必须是 index.css 里 @import 的最后一环。
+ * 下面这些覆盖规则和正文同优先级，全靠源顺序压住正文的动画 —— 提到前面就失效。
+ */
+
+/* ================================================================
+   动效降级
+   系统开了「减少动态效果」就去掉位移/缩放/模糊，只留必要的透明度。
+   流式文字的模糊是产品核心，但对眩晕敏感的人优先。
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .char-in {
+    animation: none;
+  }
+
+  /* 转圈和光标是「还在等」的唯一信号，静止=看起来坏了 —— 这两类豁免。
+     被停掉的只有位移/缩放/模糊那类。 */
+  .splash__spinner {
+    animation: spin 0.8s linear infinite !important;
+  }
+
+  .spinner-inline {
+    animation: spin 0.7s linear infinite !important;
+  }
+
+  .caret {
+    animation: blink 1s steps(2, start) infinite !important;
+  }
+}

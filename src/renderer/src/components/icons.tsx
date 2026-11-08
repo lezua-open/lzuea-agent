@@ -4,6 +4,8 @@
  * 用内联 SVG 而不是字体图标 / emoji：颜色跟 currentColor 走、能被 CSS 控制、
  * 不会因为字体缺失在不同机器上变成豆腐块。
  * 对齐统一由全局的 `svg { vertical-align: -0.125em }` 处理。
+ *
+ * 尺寸只有两档，别再加新值：13（行内 / 工具按钮）、16（导航 / 醒目图标）。
  */
 
 export type IconName =

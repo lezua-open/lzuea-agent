@@ -1,0 +1,189 @@
+/*
+ * 操作后果的反馈都收在这：复制按钮的 Q 弹、提示条/横幅、空态与光标小件。
+ * 原文里是「反馈类动效」「通用：提示条 / 空」两节，拆分时归成一个域 ——
+ * 找反馈类样式认这个文件。
+ */
+
+/* ================================================================
+   反馈类动效：欢快 Q 弹
+   ================================================================ */
+
+/*
+   和上面的 snap 是两套曲线：这里允许过冲再落定，看起来有「弹」的一下。
+   反馈只给一次，不要连续抖。
+*/
+.copy-btn {
+  position: relative;
+}
+
+.copy-btn__icon {
+  transition:
+    transform var(--dur-md) var(--ease-spring),
+    color var(--dur-xs) var(--ease-snap);
+}
+
+.copy-btn.is-copied {
+  color: var(--ok);
+}
+
+.copy-btn.is-copied .copy-btn__icon {
+  animation: pop var(--dur-lg) var(--ease-spring);
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.5) rotate(-12deg);
+  }
+  60% {
+    transform: scale(1.22) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* ================================================================
+   通用：提示条 / 空
+   ================================================================ */
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.banner--warn {
+  background: var(--warn-weak);
+  color: var(--warn);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 24%, transparent);
+}
+
+.banner--danger {
+  background: var(--danger-weak);
+  color: var(--danger);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 24%, transparent);
+}
+
+.banner__close {
+  margin-left: auto;
+  color: inherit;
+  opacity: 0.7;
+  font-size: 15px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.banner__close:hover {
+  opacity: 1;
+  /* 用 --text 做蒙层，亮暗两套都能自动跟着翻 */
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+/*
+   提示条是「反馈」，不是「操纵」—— 入场允许 Q 弹过冲，
+   一会儿后自动消失（计时在 ToastBar 里，悬停/聚焦暂停；时长按 kind 分档）。
+*/
+.toast {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  z-index: 200;
+  max-width: 70vw;
+  animation: toast-in var(--dur-lg) var(--ease-spring);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.92);
+  }
+  60% {
+    transform: translate(-50%, -3px) scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* toast 里的快捷动作（撤销等）：主色文字，悬停给一粒底 */
+.toast__action {
+  margin-left: var(--space-3);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toast__action:hover {
+  background: var(--accent-weak);
+}
+
+/* 错误提示：对齐 banner--danger 的脸色 —— 后果重的反馈要一眼认出来 */
+.toast--error {
+  background: var(--danger-weak);
+  color: var(--danger);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 0 0 1px color-mix(in srgb, var(--danger) 24%, transparent);
+}
+
+/* 退场：入场 Q 弹，出场快落（snap）—— 别抢下一步的注意力 */
+.toast--leaving {
+  animation: toast-out var(--dur-sm) var(--ease-snap) forwards;
+  pointer-events: none;
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.96);
+  }
+}
+
+.empty-inline {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.spinner-inline {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+
+.caret {
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  background: var(--accent);
+  border-radius: 1px;
+  vertical-align: -2px;
+  margin-left: 2px;
+  animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+

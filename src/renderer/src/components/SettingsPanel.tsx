@@ -121,21 +121,23 @@ export function SettingsPanel(): React.JSX.Element {
             <div className="field">
               <div className="field__label">主题</div>
               <div className="segmented">
-                {(['light', 'dark'] as const).map((t) => (
+                {(['light', 'dark', 'system'] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     className={cfg.theme === t ? 'segmented__item is-active' : 'segmented__item'}
                     onClick={() => void agentStore.saveConfig({ theme: t })}
                   >
-                    {t === 'light' ? '亮色' : '暗色'}
+                    {t === 'light' ? '亮色' : t === 'dark' ? '暗色' : '跟随系统'}
                   </button>
                 ))}
               </div>
               <p className="field__hint">
                 {cfg.theme === 'light'
                   ? '中性米白，适合白天和长时间阅读。'
-                  : '深色，弱光环境下更省眼。'}
+                  : cfg.theme === 'dark'
+                    ? '深色，弱光环境下更省眼。'
+                    : '跟着系统的深浅走，白天夜里自动切。'}
               </p>
             </div>
           </div>

@@ -1,0 +1,137 @@
+/* ================================================================
+   骨架
+   ================================================================ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  /* 卡片四周的缝隙露出外框色（和标题栏 / 侧栏同一档），卡片才浮得起来 */
+  background: var(--bg-sunken);
+}
+
+/* ---- 窗口标题栏 ----
+   窗口是无原生标题栏的（titleBarStyle: hidden），上沿整条归这里画。
+
+   整条是一块**独立的 chrome**，不跟下面的面板走：不按侧栏宽度劈开。
+   底色和侧栏取同一档（--bg-sunken，画布往下沉一层）—— 上沿和左栏本来
+   就是同一圈外框，同色才连得起来，中间不冒竖缝。但**宽度**跟侧栏解耦，
+   这样它才放得下跨面板的东西（标签栏、面包屑、全局搜索、运行状态……），
+   而不是被「左边 264px 是侧栏」这条缝钉死。
+
+   排成三段，往哪段塞东西看内容归属：
+     __lead   开头，品牌
+     __main   中段，弹性占满 —— 以后放标签栏 / 面包屑 / 搜索
+     __trail  收尾，动作区
+
+   系统窗口按钮压在整条的最右边，所以让位的 padding-right 挂在整条上，
+   三段都不用各自去躲按钮。它的底色由主进程按同一档色阶配
+   （main/window-chrome.ts 的 CHROME.chrome），两处不同步就会浮一块突兀的底。
+
+   按钮本身不画 —— 归系统，Win11 的贴靠布局/原生缩放/无障碍都在它身上。
+   这里只做两件事：整条当拖拽区（-webkit-app-region: drag，双击最大化、
+   右键系统菜单由它自动接上），以及按 --caption-w 让开按钮。 */
+.titlebar {
+  height: var(--titlebar-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  background: var(--bg-sunken);
+  padding-right: var(--caption-w, 138px);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.titlebar__lead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-left: var(--space-4);
+  /* 品牌整体往下压 10px（原来是加在旧的 .titlebar__brand 上的，照搬过来） */
+  padding-top: 10px;
+  min-width: 0;
+}
+
+.titlebar__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.titlebar__trail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+.titlebar__logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--on-accent);
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.titlebar__name {
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  /* 卡片化：浮在外框上，四周留缝。不描边框 —— 靠背景差 + 投影浮起。
+     overflow:hidden 让内部头部的分隔线顺着圆角裁齐。 */
+  margin: var(--space-3);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-drop-sm);
+  overflow: hidden;
+}
+
+.splash {
+  /* 嵌在 .app 的列布局里（上面还压着标题栏），占满剩下的高度 */
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  gap: var(--space-3);
+}
+
+.splash__spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--hairline-strong);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

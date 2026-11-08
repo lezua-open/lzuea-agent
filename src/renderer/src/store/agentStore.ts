@@ -65,6 +65,21 @@ export interface ApprovalState {
   preview: ApprovalPreview
 }
 
+export type ToastKind = 'info' | 'error'
+
+/** toast 上的快捷动作。是可序列化的判别联合 —— 状态里不放回调，动作在 App 里按 kind 分发 */
+export type ToastAction =
+  | { kind: 'undoDeleteConversation'; label: string; targetId: string }
+  | { kind: 'undoDeleteMemory'; label: string; targetId: string }
+
+export interface ToastState {
+  message: string
+  kind: ToastKind
+  action?: ToastAction
+  /** 自动消失的时长（毫秒）。带动作的多留一会儿，别在用户读完之前跑掉 */
+  duration: number
+}
+
 export interface StoreState {
   view: View
   conversations: ConversationSummary[]
@@ -78,7 +93,7 @@ export interface StoreState {
   approval: ApprovalState | null
   config: AppConfig | null
   memory: MemoryEntry[]
-  toast: string | null
+  toast: ToastState | null
   /** 进程级错误（模型鉴权、存储失败），不是工具错误 */
   fatalError: string | null
   ready: boolean
@@ -99,7 +114,7 @@ interface InternalState {
   approvalsByConvo: Map<string, ApprovalState>
   config: AppConfig | null
   memory: MemoryEntry[]
-  toast: string | null
+  toast: ToastState | null
   fatalError: string | null
   ready: boolean
 }
@@ -188,9 +203,26 @@ class AgentStore {
   }
 
   /** 提示条。公开是因为复制、点赞这类纯 UI 反馈也要走它 ——
-   *  统一入口才能统一「2.5 秒后消失」这条规则（计时在 App 里）。 */
-  showToast(message: string): void {
-    this.patch({ toast: message })
+   *  统一入口才能统一「多久后消失」这条规则（计时在 ToastBar，悬停暂停）。
+   *  时长分三档：普通 2.5 秒欢快闪一下；错误 6 秒够读完；
+   *  带动作的（删除撤销）8 秒，够读完标题再决定反不反悔。 */
+  showToast(message: string, opts?: { kind?: ToastKind; action?: ToastAction }): void {
+    const kind = opts?.kind ?? 'info'
+    const action = opts?.action
+    this.patch({
+      toast: {
+        message,
+        kind,
+        action,
+        duration: action ? 8000 : kind === 'error' ? 6000 : 2500
+      }
+    })
+  }
+
+  /** 操作失败的统一去处。调用方都把 promise void 掉了，错误不往外抛 ——
+   *  否则就是 unhandled rejection，界面一声不吭，用户什么都不知道。 */
+  private reportError(err: unknown): void {
+    this.showToast(err instanceof Error ? err.message : String(err), { kind: 'error' })
   }
 
   // ------------------------------------------------------------ 启动
@@ -245,23 +277,60 @@ class AgentStore {
 
   async createConversation(): Promise<void> {
     // 同上：不停止旧会话的 run，让它后台继续生成
-    const created = await api.createConversation()
-    await this.refreshConversations()
-    this.patch({ activeId: created.id, messages: [], view: 'chat' })
+    try {
+      const created = await api.createConversation()
+      await this.refreshConversations()
+      this.patch({ activeId: created.id, messages: [], view: 'chat' })
+    } catch (err) {
+      this.reportError(err)
+    }
   }
 
   async deleteConversation(id: string): Promise<void> {
-    await api.deleteConversation(id)
+    const title = this.internal.conversations.find((c) => c.id === id)?.title
+    try {
+      await api.deleteConversation(id)
+    } catch (err) {
+      this.reportError(err)
+      return
+    }
     await this.refreshConversations()
     if (this.internal.activeId === id) {
       const next = this.internal.conversations[0]?.id ?? null
       this.patch({ activeId: next, messages: [] })
       if (next) await this.loadMessages(next)
     }
+    // 删完立刻给反悔的机会 —— 误删会话是最典型的手滑，撤销比「删除前弹确认」友好
+    this.showToast(title ? `已删除「${title}」` : '已删除会话', {
+      action: { kind: 'undoDeleteConversation', label: '撤销', targetId: id }
+    })
+  }
+
+  /** 撤销删除。恢复后回到这个会话 —— 对齐 Finder：撤销删除后选中回来的那项 */
+  async undoDeleteConversation(id: string): Promise<void> {
+    let ok: boolean
+    try {
+      ok = await api.undoDeleteConversation(id)
+    } catch (err) {
+      this.reportError(err)
+      return
+    }
+    if (!ok) {
+      this.showToast('这份已经撤不回来了', { kind: 'error' })
+      return
+    }
+    await this.refreshConversations()
+    this.dismissToast()
+    await this.selectConversation(id)
   }
 
   async renameConversation(id: string, title: string): Promise<void> {
-    await api.renameConversation(id, title)
+    try {
+      await api.renameConversation(id, title)
+    } catch (err) {
+      this.reportError(err)
+      return
+    }
     await this.refreshConversations()
   }
 
@@ -284,37 +353,38 @@ class AgentStore {
     // 没有会话就地开一个。用户是为了说话来的，不该先去点「新建会话」——
     // 那个按钮在空态里很容易被当成装饰，然后发送键灰着，没人知道为什么。
     let convoId = activeId
-    if (!convoId) {
-      const created = await api.createConversation()
-      await this.refreshConversations()
-      convoId = created.id
-      this.patch({ activeId: convoId, messages: [], view: 'chat' })
-    }
-
-    // 输入先本地垫一条，不用等数据库回读
-    const optimistic: ChatMessage = {
-      id: `optimistic-${Date.now()}`,
-      role: 'user',
-      blocks: [{ type: 'text', text: trimmed }],
-      createdAt: Date.now()
-    }
-
-    this.internal.runningByConvo.add(convoId)
-    this.patch({
-      messages: [...this.internal.messages, optimistic],
-      fatalError: null,
-      view: 'chat'
-    })
-    // 清掉这个会话的旧 liveTurns（新一轮要开始）
-    this.internal.liveTurnsByConvo.delete(convoId)
-    this.emit()
-
+    // 建会话到投递一条龙包在 try 里：哪一步失败都走 toast，不给调用方留 unhandled rejection
     try {
+      if (!convoId) {
+        const created = await api.createConversation()
+        await this.refreshConversations()
+        convoId = created.id
+        this.patch({ activeId: convoId, messages: [], view: 'chat' })
+      }
+
+      // 输入先本地垫一条，不用等数据库回读
+      const optimistic: ChatMessage = {
+        id: `optimistic-${Date.now()}`,
+        role: 'user',
+        blocks: [{ type: 'text', text: trimmed }],
+        createdAt: Date.now()
+      }
+
+      this.internal.runningByConvo.add(convoId)
+      this.patch({
+        messages: [...this.internal.messages, optimistic],
+        fatalError: null,
+        view: 'chat'
+      })
+      // 清掉这个会话的旧 liveTurns（新一轮要开始）
+      this.internal.liveTurnsByConvo.delete(convoId)
+      this.emit()
+
       await api.send(convoId, trimmed)
     } catch (err) {
-      this.internal.runningByConvo.delete(convoId)
+      if (convoId) this.internal.runningByConvo.delete(convoId)
       this.emit()
-      this.showToast(err instanceof Error ? err.message : String(err))
+      this.reportError(err)
     }
   }
 
@@ -359,8 +429,34 @@ class AgentStore {
   }
 
   async deleteMemory(id: string): Promise<void> {
-    await api.deleteMemory(id)
+    const key = this.internal.memory.find((m) => m.id === id)?.key
+    try {
+      await api.deleteMemory(id)
+    } catch (err) {
+      this.reportError(err)
+      return
+    }
     await this.refreshMemory()
+    // 和会话删除同一套待遇：删完立刻给反悔的机会
+    this.showToast(key ? `已删除记忆「${key}」` : '已删除记忆条目', {
+      action: { kind: 'undoDeleteMemory', label: '撤销', targetId: id }
+    })
+  }
+
+  async undoDeleteMemory(id: string): Promise<void> {
+    let ok: boolean
+    try {
+      ok = await api.undoDeleteMemory(id)
+    } catch (err) {
+      this.reportError(err)
+      return
+    }
+    if (!ok) {
+      this.showToast('这份已经撤不回来了', { kind: 'error' })
+      return
+    }
+    await this.refreshMemory()
+    this.dismissToast()
   }
 
   dismissToast(): void {
@@ -462,7 +558,7 @@ class AgentStore {
         if (!event.conversationId) {
           this.patch({ fatalError: event.message })
         } else {
-          this.showToast(event.message)
+          this.showToast(event.message, { kind: 'error' })
         }
         return
       }

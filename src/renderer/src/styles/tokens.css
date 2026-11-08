@@ -1,0 +1,198 @@
+/* ================================================================
+   设计令牌
+   所有颜色 / 间距 / 圆角 / 动效曲线都从这里取，换主题只改这一段。
+
+   分层原则：**靠微对比色阶 + 阴影拉开层次，不用黑粗边框。**
+   相邻两层背景只差一点点明度（微对比），边界由 1px hairline
+   和投影共同描出，视觉上是「浮起来」而不是「框起来」。
+
+   主题分两块，颜色一律从变量取，组件里不许出现色值字面量：
+     :root                亮色 —— 中性米白，默认
+     [data-theme='dark']  深色
+   与颜色无关的（间距 / 圆角 / 字体 / 动效 / 布局）只写一遍。
+
+   语义 token 里有三个的方向会随主题翻转，别按直觉写死：
+     --accent-strong  高一级的强调色。暗底上更亮、亮底上更**深**
+     --on-accent      压在实心强调色上的前景。暗底配深字、亮底配白字
+     --on-danger      同上，压在实心 danger 上的前景
+   ================================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ================= 与主题无关 ================= */
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* mac 先吃 -apple-system（SF），Windows 吃 Segoe；中文各自回退苹方 / 雅黑。
+     mono 里刻意没有 Courier New —— 代码宁可掉系统等宽兜底，也不变打字机。 */
+  --font-sans:
+    -apple-system, 'Segoe UI Variable', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui,
+    sans-serif;
+  --font-mono:
+    'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, 'PingFang SC',
+    'Microsoft YaHei UI', monospace;
+
+  /* ---- 动效双轨。两套曲线职责不同，不要混用 ----
+     snap  ：用户主动的操纵（拖拽、缩放、改尺寸、面板切换）——
+             雷厉风行，末端减速但绝不回弹。
+     spring：操作完成后的反馈（复制、点赞、提示条）——
+             欢快 Q 弹，允许一点过冲再落定。
+     focus ：流式文字的「对焦」。                                        */
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-focus: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --dur-xs: 100ms;
+  --dur-sm: 150ms;
+  --dur-md: 220ms;
+  --dur-lg: 320ms;
+
+  --sidebar-w: 264px;
+  --titlebar-h: 40px;
+  --header-h: 52px;
+  --composer-max: 860px;
+  --content-max: 860px;
+
+  /* ================= 亮色：中性米白 =================
+     微冷的白，不发黄。相邻层明度差刻意压小，
+     层次靠阴影 + 深色低透明度 hairline 描出。 */
+
+  /* ---- 微对比色阶 ---- */
+  --bg: #f4f4f2; /* 画布 */
+  --bg-sunken: #ebebe8; /* 应用外框（标题栏 + 侧栏），比画布沉一层 */
+  --bg-elevated: #ffffff; /* 卡片，往上浮 */
+  --bg-raised: #ffffff; /* 悬停 / 选中，靠 hairline + 影子描边 */
+  --bg-hover: #f0f0ed;
+  --bg-inset: #e8e8e5; /* 代码井，嵌进卡片里 */
+  --bg-glass: rgba(31, 35, 40, 0.03);
+
+  /* ---- 描边是阴影，不是边框。亮底下换成深色低透明度 ---- */
+  --hairline: rgba(31, 35, 40, 0.1);
+  --hairline-strong: rgba(31, 35, 40, 0.16);
+  --divider: rgba(31, 35, 40, 0.07);
+
+  --text: #1f2328;
+  --text-muted: #5a6068;
+  --text-faint: #71777f; /* 11px 小字也得过 4:1 —— 别再往浅调 */
+
+  /* ---- 强调色。亮底下压深，否则文字对比度不够 ---- */
+  --accent: #2f6feb;
+  --accent-weak: rgba(47, 111, 235, 0.1);
+  --accent-strong: #1f5bd0;
+  --on-accent: #ffffff;
+
+  --danger: #d1425c;
+  --danger-weak: rgba(209, 66, 92, 0.1);
+  --on-danger: #ffffff;
+  --warn: #9a6a12;
+  --warn-weak: rgba(154, 106, 18, 0.12);
+  --ok: #2f7d3a;
+  --ok-weak: rgba(47, 125, 58, 0.12);
+  --info: #1a7fa8;
+  --info-weak: rgba(26, 127, 168, 0.12);
+
+  --diff-add: #2f7d3a;
+  --diff-del: #c2364f;
+  --diff-hunk: #2f6feb;
+
+  /* 弹窗遮罩：亮暗两套都要够暗，才能把注意力压到弹窗上 */
+  --scrim: rgba(31, 35, 40, 0.45);
+
+  /* 拨动开关。滑块在「关」轨道和「开」轨道上都要看得见，
+     所以轨道单独给一个中性灰，不能借用 --bg-raised（亮色下是纯白，滑块会消失）。 */
+  --switch-off: #d5d5d1;
+  --switch-knob: #ffffff;
+
+  /* ---- 阴影。亮底上纯黑影会显脏，压低不透明度并带一点冷灰 ----
+     drop-* 是纯投影那一段，单独拿出来给「只想要投影、不要 hairline」的场合用
+     （例如危险卡片，它的描边已经被 danger 环占了）。 */
+  --shadow-drop-sm: 0 1px 2px rgba(31, 35, 40, 0.08);
+  --shadow-drop-md: 0 8px 22px -8px rgba(31, 35, 40, 0.14);
+  --shadow-drop-lg: 0 28px 64px -16px rgba(31, 35, 40, 0.22);
+  --shadow-hair: 0 0 0 1px var(--hairline);
+  --shadow-sm: var(--shadow-drop-sm), 0 0 0 1px var(--hairline);
+  --shadow-md: var(--shadow-drop-md), 0 0 0 1px var(--hairline);
+  --shadow-lg: var(--shadow-drop-lg), 0 0 0 1px var(--hairline-strong);
+
+  /* ---- 聚焦：双环阴影，不用突兀的亮色描边 ----
+     inset 内环咬进控件里，外环轻轻托出，外面再压一层深投影。
+     整体温润、有咬合感，而不是一根荧光棒贴在边缘。 */
+  --focus-ring:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 12px 32px -12px rgba(31, 35, 40, 0.18);
+}
+
+/* ================= 深色 =================
+   只覆盖颜色，与主题无关的 token 继承 :root。 */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #12161c;
+  --bg-sunken: #0e1216;
+  --bg-elevated: #171d25;
+  --bg-raised: #1d242e;
+  --bg-hover: #222a35;
+  --bg-inset: #0b0f13;
+  --bg-glass: rgba(255, 255, 255, 0.028);
+
+  /* 暗底下描边反过来是高光 */
+  --hairline: rgba(255, 255, 255, 0.055);
+  --hairline-strong: rgba(255, 255, 255, 0.095);
+  --divider: rgba(255, 255, 255, 0.045);
+
+  --text: #e7eaf0;
+  --text-muted: #98a2b3;
+  --text-faint: #7d8798;
+
+  --accent: #7aa2f7;
+  --accent-weak: rgba(122, 162, 247, 0.14);
+  --accent-strong: #a9c2ff;
+  --on-accent: #0b0d11;
+
+  --danger: #f7768e;
+  --danger-weak: rgba(247, 118, 142, 0.14);
+  --on-danger: #0b0d11;
+  --warn: #e0af68;
+  --warn-weak: rgba(224, 175, 104, 0.14);
+  --ok: #9ece6a;
+  --ok-weak: rgba(158, 206, 106, 0.14);
+  --info: #7dcfff;
+  --info-weak: rgba(125, 207, 255, 0.14);
+
+  --diff-add: #9ece6a;
+  --diff-del: #f7768e;
+  --diff-hunk: #7aa2f7;
+
+  --scrim: rgba(6, 8, 12, 0.66);
+
+  --switch-off: #2b323d;
+  --switch-knob: #ffffff;
+
+  --shadow-drop-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-drop-md: 0 8px 22px -8px rgba(0, 0, 0, 0.42);
+  --shadow-drop-lg: 0 28px 64px -16px rgba(0, 0, 0, 0.62);
+  --shadow-hair: 0 0 0 1px var(--hairline);
+  --shadow-sm: var(--shadow-drop-sm), 0 0 0 1px var(--hairline);
+  --shadow-md: var(--shadow-drop-md), 0 0 0 1px var(--hairline);
+  --shadow-lg: var(--shadow-drop-lg), 0 0 0 1px var(--hairline-strong);
+
+  --focus-ring:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 12px 32px -12px rgba(0, 0, 0, 0.55);
+}
+

@@ -1,0 +1,21 @@
+/*
+ * 样式入口 —— 这里只放 @import，别写规则。
+ *
+ * @import 的顺序就是层叠顺序（后 import 的赢），改序前先想清楚谁压谁：
+ * tokens 先行（变量得先定义），reduced-motion 收尾。reduced-motion.css 里的
+ * 覆盖规则（.char-in / .caret 等）和正文同优先级，全靠源顺序压住正文动画，
+ * 挪到前面就压不住了 —— 别动它。
+ *
+ * 各域文件保留原来的分节横幅注释，类名一个没改：找样式还是认语义类名。
+ */
+@import './tokens.css';
+@import './base.css';
+@import './shell.css';
+@import './sidebar.css';
+@import './chat.css';
+@import './markdown.css';
+@import './composer.css';
+@import './feedback.css';
+@import './dialog.css';
+@import './panels.css';
+@import './reduced-motion.css';

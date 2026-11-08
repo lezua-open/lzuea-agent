@@ -4,7 +4,10 @@ import type { MemoryRepository } from '@core/ports'
 import { ValidationError } from '@core/errors'
 import { rankRecall } from '@core/memory/recall'
 import type { AppDatabase } from './db'
-import { memory } from './schema'
+import { memory, type MemoryRow } from './schema'
+
+/** 删除回收站的容量，同 message-store */
+const TRASH_LIMIT = 5
 
 function toEntry(row: {
   id: string
@@ -42,6 +45,9 @@ function toEntry(row: {
  */
 export class SqliteMemoryRepository implements MemoryRepository {
   constructor(private readonly db: AppDatabase) {}
+
+  /** 删除回收站：最近 TRASH_LIMIT 份快照，同 message-store —— 撤销是手滑反悔，不是备份 */
+  private readonly trash = new Map<string, MemoryRow>()
 
   async list(): Promise<MemoryEntry[]> {
     const rows = await this.db.select().from(memory).orderBy(memory.updatedAt)
@@ -95,8 +101,31 @@ export class SqliteMemoryRepository implements MemoryRepository {
   }
 
   async deleteById(id: string): Promise<boolean> {
-    const rows = await this.db.delete(memory).where(eq(memory.id, id)).returning({ id: memory.id })
-    return rows.length > 0
+    // RETURNING 把删掉的行直接带回来 —— 一步拿到撤销要用的快照，不用先查后删
+    const rows = await this.db.delete(memory).where(eq(memory.id, id)).returning()
+    if (rows.length === 0) return false
+
+    this.trash.delete(id)
+    this.trash.set(id, rows[0])
+    while (this.trash.size > TRASH_LIMIT) {
+      const oldest = this.trash.keys().next().value
+      if (oldest === undefined) break
+      this.trash.delete(oldest)
+    }
+    return true
+  }
+
+  async undoDeleteById(id: string): Promise<boolean> {
+    const row = this.trash.get(id)
+    if (!row) return false
+    this.trash.delete(id)
+    try {
+      await this.db.insert(memory).values(row)
+      return true
+    } catch {
+      // 同 key 已被新条目占了（unique 索引）—— 撤不回去，也绝不能把新条目顶掉
+      return false
+    }
   }
 
   async recall(query: string, limit = 5): Promise<MemoryEntry[]> {
