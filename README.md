@@ -13,6 +13,7 @@ Windows / macOS / Linux 桌面端 AI Agent。工作在你选定的工作区目�
 
 ```bash
 npm install
+npm run setup   # 拉取 Electron 二进制 + 安装 git hooks（依赖的 install 脚本被 .npmrc 跳过）
 npm run dev
 ```
 
@@ -25,7 +26,7 @@ npm run dev
 
 | 现象                                                        | 原因与处理                                                                                                                                                                 |
 | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Error: Electron uninstall`                                 | `electron` 的二进制没下下来。执行 `node node_modules/electron/install.js`。                                                                                                |
+| `Error: Electron uninstall`                                 | `electron` 的二进制没下下来。执行 `npm run setup`（即 `node node_modules/electron/install.js`）。                                                                          |
 | `Cannot read properties of undefined (reading 'whenReady')` | 环境里有 `ELECTRON_RUN_AS_NODE=1`（很多 Node 工具链会设），Electron 会退化成纯 Node 运行。用 `ELECTRON_RUN_AS_NODE= npm run dev` 启动，或先 `unset ELECTRON_RUN_AS_NODE`。 |
 | 启动时弹出「找不到数据库迁移目录」                          | `drizzle/` 目录丢失或不含 `meta/_journal.json`。重新生成：`npx drizzle-kit generate`。                                                                                     |
 
